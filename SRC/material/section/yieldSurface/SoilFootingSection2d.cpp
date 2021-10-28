@@ -17,12 +17,44 @@
 #include <ID.h>
 #include <FEM_ObjectBroker.h>
 #include <MatrixUtil.h>
+#include <elementAPI.h>
 
 #include <classTags.h>
 
 ID SoilFootingSection2d::code(3);
 
+void* OPS_SoilFootingSection2d()
+{
+    if (OPS_GetNumRemainingInputArgs() < 8) {
+	opserr << "WARNING insufficient arguments\n";
+	opserr << "Want: section SoilFootingSection tag? fs? vult? l? kv? kh? rv? deltaL?" << endln;
+	return 0;
+    }
 
+    int tag;
+    int numdata = 1;
+    if (OPS_GetIntInput(&numdata, &tag) < 0) {
+	opserr << "WARNING invalid SoilFootingSection tag" << endln;
+	return 0;
+    }
+
+    numdata = 7;
+    double data[7];
+    if (OPS_GetDoubleInput(&numdata, data) < 0) {
+	opserr << "WARNING invalid double inputs\n";
+	opserr << "section SoilFootingSection: " << tag << endln;
+	return 0;
+    }
+    double fs = data[0];
+    double vult = data[1];
+    double l = data[2];
+    double kv = data[3];
+    double kh = data[4];
+    double rv = data[5];
+    double deltaL = data[6];
+
+    return new SoilFootingSection2d(tag,fs,vult,l,kv,kh,rv,deltaL);
+}
 
 // default constructor
 
@@ -612,7 +644,7 @@ SoilFootingSection2d::applyLoading(Vector de)
       if (dHt == 0.0)
          switch1 = (dMt == 0) ? 0 : 1; 
       else
-         switch1 = (dMt == 0) ? 2 : 3; 
+         switch1 = (dMt == 0) ? 2 : 3; // add braces around this?
 
    if (isOver == 0)
       switch1 = 7;

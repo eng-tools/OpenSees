@@ -39,7 +39,7 @@
 
 #ifndef Metis_h
 #define Metis_h
-
+#define _USE_METIS_5p1 2
 #ifdef _USE_METIS_5p1
 #include <metis.h>
 #endif
