@@ -168,6 +168,7 @@ TCL_COMMAND_LIBS = $(FE)/domain/pattern/TclPatternCommand.o \
 	$(FE)/material/uniaxial/unloading/TclModelBuilderUnloadingRuleCommand.o \
 	$(FE)/material/nD/TclModelBuilderNDMaterialCommand.o \
 	$(FE)/material/section/yieldSurface/TclModelBuilderYS_SectionCommand.o \
+	$(FE)/material/section/yieldSurface/SoilFootingSection2d.o \
 	$(FE)/material/section/TclModelBuilderSectionCommand.o \
 	$(FE)/modelbuilder/tcl/TclUniaxialMaterialTester.o \
 	$(FE)/modelbuilder/tcl/TclPlaneStressMaterialTester.o \

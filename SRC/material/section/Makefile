@@ -32,7 +32,8 @@ OBJS       = SectionForceDeformation.o \
 	LayeredShellFiberSectionThermal.o \
 	FiberSection3dThermal.o \
 	MembranePlateFiberSectionThermal.o \
-	FiberSectionGJThermal.o
+	FiberSectionGJThermal.o \
+	SoilFootingSection2d.o
 
 all:         $(OBJS)
 	@$(CD) $(FE)/material/section/repres; $(MAKE);

@@ -63,6 +63,7 @@
 #include <ElasticPlateSection.h>
 #include <ElasticMembranePlateSection.h>
 #include <MembranePlateFiberSection.h>
+#include <yieldSurface/SoilFootingSection2d.h>
 
 #include <QuadPatch.h>
 #include <CircPatch.h>

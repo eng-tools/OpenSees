@@ -56,6 +56,7 @@
 //#include <FiberSectionGJThermal.h>
 #include <MembranePlateFiberSectionThermal.h>
 #include <LayeredShellFiberSectionThermal.h>
+#include <SoilFootingSection2d.h>
 
 void* OPS_ElasticSection2d();
 void* OPS_ElasticSection3d();
@@ -87,6 +88,7 @@ void* OPS_LayeredShellFiberSection();
 void* OPS_Bidirectional();
 void* OPS_Isolator2spring();
 void* OPS_FiberSection2dThermal();
+void* OPS_SoilFootingSection2d();
 
 namespace {
     static FiberSection2d* theActiveFiberSection2d = 0;
@@ -1060,6 +1062,7 @@ namespace {
 	functionMap.insert(std::make_pair("Isolator2spring", &OPS_Isolator2spring));
 	functionMap.insert(std::make_pair("RCCircularSection", &OPS_RCCircularSection));
 	functionMap.insert(std::make_pair("RCTunnelSection", &OPS_RCTunnelSection));
+	functionMap.insert(std::make_pair("SoilFootingSection2d", &OPS_SoilFootingSection2d));
 
 	return 0;
     }

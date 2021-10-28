@@ -139,7 +139,8 @@
 #include "ElasticMembranePlateSection.h"
 #include "MembranePlateFiberSection.h"
 #include "Bidirectional.h"
-#include "LayeredShellFiberSection.h" // Yuli Huang & Xinzheng Lu 
+#include "LayeredShellFiberSection.h" // Yuli Huang & Xinzheng Lu
+#include "SoilFootingSection2d.h"
 
 // NDMaterials
 #include "ElasticIsotropicPlaneStrain2D.h"
