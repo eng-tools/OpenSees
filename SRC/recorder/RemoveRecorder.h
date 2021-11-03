@@ -80,8 +80,9 @@ class RemoveRecorder: public Recorder
 		  int nTagtopn =0,
 		  int globgrav =0,
 		  const char *thefileNameinf =0);
-   
+   RemoveRecorder();
    ~RemoveRecorder();
+
    int record(int commitTag, double timeStamp);
    int playback(int commitTag);
    

@@ -433,10 +433,7 @@ void *OPS_RemoveRecorder() {
     }
     theOutputStream = new DummyStream();
 
-    return new RemoveRecorder(
-        nodeTag, eleIDs, secIDs, secondaryEleIDs, remCriteria, *domain,
-        *theOutputStream, echoTime, dT, fileName, eleMass, gAcc, gDir,
-        gPat, nTagbotn, nTagmidn, nTagtopn, globgrav, fileNameinf);
+    return 0;
 }
 
 //#define MMTDEBUG
