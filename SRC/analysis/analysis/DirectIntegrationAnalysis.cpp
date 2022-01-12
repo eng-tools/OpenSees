@@ -238,7 +238,7 @@ DirectIntegrationAnalysis::analyzeStep(double dT)
     }
 #endif
   // AddingSensitivity:END //////////////////////////////////////
-  
+
   result = theIntegrator->commit();
   if (result < 0) {
     opserr << "DirectIntegrationAnalysis::analyze() - ";

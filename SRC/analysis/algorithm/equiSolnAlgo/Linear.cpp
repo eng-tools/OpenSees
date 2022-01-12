@@ -115,7 +115,7 @@ Linear::solveCurrentStep(void)
 			factorOnce = 2;
     }
 
-    
+
     if (theIncIntegrator->formUnbalance() < 0) {
 	opserr << "WARNING Linear::solveCurrentStep() -";
 	opserr << "the Integrator failed in formUnbalance()\n";	

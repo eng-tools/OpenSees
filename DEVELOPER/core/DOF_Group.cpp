@@ -34,7 +34,7 @@
 //
 // What: "@(#) DOF_Group.C, revA"
 
-
+#include <stdio.h>
 #include <DOF_Group.h>
 #include <stdlib.h>
 
@@ -390,6 +390,7 @@ DOF_Group::zeroUnbalance(void)
 const Vector &
 DOF_Group::getUnbalance(Integrator *theIntegrator)
 {
+  fprintf(stderr, "core/DOF_Group::getUnbalance() - start\n");
     if (theIntegrator != 0)
 	theIntegrator->formNodUnbalance(this);
 

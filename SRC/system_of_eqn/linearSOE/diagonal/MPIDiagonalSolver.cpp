@@ -15,6 +15,7 @@
 #include <MPIDiagonalSolver.h>
 #include <MPIDiagonalSOE.h>
 #include <Channel.h>
+#include <stdio.h>
 
 //#include <essl.h>
 
@@ -61,8 +62,8 @@ MPIDiagonalSolver::solve(void)
 
   int processID = theSOE->processID;
   int numNeighbours = theSOE->actualNeighbors;
-  MPI_Request *theRequests = new MPI_Request[numNeighbours];
-  MPI_Status  *theStatuses = new MPI_Status[numNeighbours];
+  MPI_Request *theRequests = new MPI_Request[2*numNeighbours];
+  MPI_Status  *theStatuses = new MPI_Status[2*numNeighbours];
  
   //MPI_Request requests[2*numNeighbours];
   //MPI_Status statuses[2*numNeighbours];

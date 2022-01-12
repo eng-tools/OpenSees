@@ -137,10 +137,11 @@ MPIDiagonalSOE::setSize(Graph &theGraph)
   VertexIter &theVertices = theGraph.getVertices();
   while ((theVertex = theVertices()) != 0) {
     int vertexTag = theVertex->getTag();
-    myDOFsArray[count++] = vertexTag;
+    myDOFsArray[count] = vertexTag;
+    count++;
   }
   static ID otherSize(1);
-  delete &theGraph;
+  //delete &theGraph;
   
 
   myDOFs.setData(myDOFsArray, size);
@@ -166,7 +167,7 @@ MPIDiagonalSOE::setSize(Graph &theGraph)
   for (int i=0; i<numProcesses; i++)
     if ( max[0] < allSizes[i] )
       max[0] = allSizes[i];
-  
+
   if (max[0] < size ) {
     opserr << " MPIDiagonalSOE::setSize() L170 : SEVERE ERROR : ABORTING TASK \n";
     exit(-1);
@@ -400,7 +401,7 @@ MPIDiagonalSOE::getpartofA(Vector& At, const ID& ids)
 int 
 MPIDiagonalSOE::addA(const Matrix &m, const ID &id, double fact)
 {
- 
+
   //
   // NEED TO COMMENT OUT THE IF
   // if want to update A

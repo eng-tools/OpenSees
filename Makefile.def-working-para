@@ -456,9 +456,14 @@ endif
 include $(FE)/Makefile.incl
 
 
-TCL_INCLUDES = -I/Library/Frameworks/Tcl.framework/Headers -I/Library/Frameworks/Tk.framework/Headers
+TCL_INCLUDES = -I/Library/Frameworks/Tcl.framework/Headers -I/Library/Frameworks/Tk.framework/Headers \
+                -I/Library/Frameworks/Tcl.framework/Versions/Current/
+#PYTHON_INCLUDES = -I/usr/local/opt/python/Frameworks/Python.framework/Versions/3.7/include/python3.7m \
+#               -I/usr/local/opt/python/Frameworks/Python.framework/Versions/3.7/include/python3.7m/internal
+
 PYTHON_INCLUDES = -I/usr/local/opt/python/Frameworks/Python.framework/Versions/3.7/include/python3.7m \
                -I/usr/local/opt/python/Frameworks/Python.framework/Versions/3.7/include/python3.7m/internal
+
 
 INCLUDES = $(TCL_INCLUDES) $(FE_INCLUDES) $(MACHINE_INCLUDES) $(PYTHON_INCLUDES)
 
