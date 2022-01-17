@@ -200,6 +200,7 @@ extern "C" int         OPS_ResetInputNoBuilder(ClientData clientData, Tcl_Interp
 extern void *OPS_NewtonRaphsonAlgorithm(void);
 extern void *OPS_ExpressNewton(void);
 extern void *OPS_ModifiedNewton(void);
+extern void *OPS_NewtonLineSearch(void);
 extern void *OPS_NewtonHallM(void);
 
 extern void *OPS_Newmark(void);
