@@ -32,6 +32,7 @@
 # 4) set path to a python virtual environment PYTHON_VENV (not sure if this is necessary)
 #	e.g. PYTHON_VENV = /Users/maximmillen/git/packages/OpenSees/venv
 # 5) run `make python`
+# When running on Mac especially using MPI first run `export TMPDIR=/tmp`
 
 INTERPRETER_LANGUAGE = PYTHON
 #INTERPRETER_LANGUAGE = TCL

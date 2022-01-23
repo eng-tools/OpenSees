@@ -17,8 +17,9 @@
 **   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
 **                                                                    **
 ** ****************************************************************** */
-
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
+//#include <math.h>
 #include <IMKPeakOriented.h>
 #include <elementAPI.h>
 #include <Vector.h>

@@ -18,7 +18,9 @@
 **                                                                    **
 ** ****************************************************************** */
 
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
+//#include <math.h>
 #include <IMKPinching.h>
 #include <elementAPI.h>
 #include <Vector.h>
