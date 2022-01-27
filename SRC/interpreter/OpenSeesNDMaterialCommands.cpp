@@ -121,7 +121,7 @@ namespace {
 	nDMaterialsMap.insert(std::make_pair("ContactMaterial2D", &OPS_ContactMaterial2DMaterial));
 	nDMaterialsMap.insert(std::make_pair("ContactMaterial3D", &OPS_ContactMaterial3DMaterial));
 	nDMaterialsMap.insert(std::make_pair("InitialStateAnalysisWrapper", &OPS_InitialStateAnalysisWrapperMaterial));
-	nDMaterialsMap.insert(std::make_pair("StressDensityModel", &OPS_StressDensityMaterial));
+	nDMaterialsMap.insert(std::make_pair("StressDensity", &OPS_StressDensityMaterial));
 	nDMaterialsMap.insert(std::make_pair("ElasticIsotropic", &OPS_ElasticIsotropicMaterial));
 	nDMaterialsMap.insert(std::make_pair("ElasticIsotropic3D", &OPS_ElasticIsotropic3D));
 	nDMaterialsMap.insert(std::make_pair("ElasticOrthotropic3D", &OPS_ElasticOrthotropicMaterial));
