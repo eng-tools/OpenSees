@@ -144,6 +144,7 @@ OpenSeesCommands::OpenSeesCommands(DL_Interpreter* interp)
      theSOE(0), theEigenSOE(0), theNumberer(0), theHandler(0),
      theStaticIntegrator(0), theTransientIntegrator(0),
      theAlgorithm(0), theStaticAnalysis(0), theTransientAnalysis(0),
+     theVariableTimeStepTransientAnalysis(0),
      thePFEMAnalysis(0),
      theAnalysisModel(0), theTest(0), numEigen(0), theDatabase(0),
      theBroker(), theTimer(), theSimulationInfo(), theMachineBroker(0),
@@ -207,6 +208,12 @@ OpenSeesCommands::getDomain()
 {
     return theDomain;
 }
+
+// Need a global pointer to Variable analysis since analyze() is an overload function
+VariableTimeStepDirectIntegrationAnalysis *theVariableTimeStepTransientAnalysis = 0;
+StaticAnalysis* theStaticAnalysis = 0;
+TransientAnalysis* theTransientAnalysis = 0;
+PFEMAnalysis* thePFEMAnalysis = 0;
 
 void
 OpenSeesCommands::setSOE(LinearSOE* soe)
@@ -696,32 +703,32 @@ OpenSeesCommands::setVariableAnalysis()
     }
 
     if (theAlgorithm == 0) {
-	opserr << "WARNING analysis Transient - no Algorithm yet specified, \n";
+	opserr << "WARNING analysis VariableTransient - no Algorithm yet specified, \n";
 	opserr << " NewtonRaphson default will be used\n";
 	theAlgorithm = new NewtonRaphson(*theTest);
     }
 
     if (theHandler == 0) {
-	opserr << "WARNING analysis Transient dt tFinal - no ConstraintHandler\n";
+	opserr << "WARNING analysis VariableTransient dt tFinal - no ConstraintHandler\n";
 	opserr << " yet specified, PlainHandler default will be used\n";
 	theHandler = new PlainHandler();
     }
 
     if (theNumberer == 0) {
-	opserr << "WARNING analysis Transient dt tFinal - no Numberer specified, \n";
+	opserr << "WARNING analysis VariableTransient dt tFinal - no Numberer specified, \n";
 	opserr << " RCM default will be used\n";
 	RCM *theRCM = new RCM(false);
 	theNumberer = new DOF_Numberer(*theRCM);
     }
 
     if (theTransientIntegrator == 0) {
-	opserr << "WARNING analysis Transient dt tFinal - no Integrator specified, \n";
+	opserr << "WARNING analysis VariableTransient dt tFinal - no Integrator specified, \n";
 	opserr << " Newmark(.5,.25) default will be used\n";
 	theTransientIntegrator = new Newmark(0.5,0.25);
     }
 
     if (theSOE == 0) {
-	opserr << "WARNING analysis Transient dt tFinal - no LinearSOE specified, \n";
+	opserr << "WARNING analysis VariableTransient dt tFinal - no LinearSOE specified, \n";
 	opserr << " ProfileSPDLinSOE default will be used\n";
 	ProfileSPDLinSolver *theSolver;
 	theSolver = new ProfileSPDLinDirectSolver();
@@ -738,7 +745,7 @@ OpenSeesCommands::setVariableAnalysis()
 	 *theTransientIntegrator,
 	 theTest);
 
-    // set the pointer for variabble time step analysis
+    // set the pointer for variable time step analysis
     theTransientAnalysis = theVariableTimeStepTransientAnalysis;
 
     if (theEigenSOE != 0) {
@@ -847,6 +854,7 @@ OpenSeesCommands::wipeAnalysis()
     theTransientIntegrator = 0;
     theStaticAnalysis = 0;
     theTransientAnalysis = 0;
+    theVariableTimeStepTransientAnalysis = 0;
     thePFEMAnalysis = 0;
     theTest = 0;
 
@@ -1662,7 +1670,9 @@ int OPS_analyze()
     if (cmds == 0) return 0;
 
     int result = 0;
+    // Why do these need to be requested each time? should be global and would be more efficient.
     StaticAnalysis* theStaticAnalysis = cmds->getStaticAnalysis();
+    VariableTimeStepDirectIntegrationAnalysis* theVariableTimeStepTransientAnalysis = cmds->getVariableAnalysis();
     TransientAnalysis* theTransientAnalysis = cmds->getTransientAnalysis();
     PFEMAnalysis* thePFEMAnalysis = cmds->getPFEMAnalysis();
 
@@ -1692,8 +1702,21 @@ int OPS_analyze()
 	double dt;
 	if (OPS_GetDoubleInput(&numdata, &dt) < 0) return -1;
 	ops_Dt = dt;
-
-	result = theTransientAnalysis->analyze(numIncr, dt);
+	if (OPS_GetNumRemainingInputArgs() == 0) {
+	    result = theTransientAnalysis->analyze(numIncr, dt);
+	} else if (OPS_GetNumRemainingInputArgs() < 3) {
+	  opserr << "WARNING insufficient args for variable transient need: dtMin dtMax Jd \n";
+	  opserr << "n_args" << OPS_GetNumRemainingInputArgs() << "\n";
+	    return -1;
+	} else {
+	double dtMin;
+	if (OPS_GetDoubleInput(&numdata, &dtMin) < 0) return -1;
+	double dtMax;
+	if (OPS_GetDoubleInput(&numdata, &dtMax) < 0) return -1;
+	int Jd;
+	if (OPS_GetIntInput(&numdata, &Jd) < 0) return -1;
+	  result = theVariableTimeStepTransientAnalysis->analyze(numIncr, dt, dtMin, dtMax, Jd);
+	}
     } else {
 	opserr << "WARNING No Analysis type has been specified \n";
 	return -1;
@@ -1814,6 +1837,8 @@ int OPS_initializeAnalysis()
     if (cmds == 0) return 0;
     DirectIntegrationAnalysis* theTransientAnalysis =
 	cmds->getTransientAnalysis();
+	VariableTimeStepDirectIntegrationAnalysis* theVariableTimeStepTransientAnalysis =
+	cmds->getVariableAnalysis();
 
     StaticAnalysis* theStaticAnalysis =
 	cmds->getStaticAnalysis();

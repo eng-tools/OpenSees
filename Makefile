@@ -140,6 +140,9 @@ wipe:
 	@$(RM) $(RMFLAGS) $(WIPE_LIBS) *.o *~ core 
 	@$(CD) $(FE)/../EXAMPLES;  $(MAKE) wipe;
 
+wipesource:
+	@$(CD) $(FE)/;  $(MAKE) wipe
+
 wipeall: 
 	@( \
 	for f in $(DIRS); \
