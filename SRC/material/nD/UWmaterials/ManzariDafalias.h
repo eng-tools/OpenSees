@@ -84,6 +84,7 @@ class ManzariDafalias : public NDMaterial
 	const Vector getAlpha();
 	const Vector getFabric();
 	const Vector getAlpha_in();
+	const double getPWaveSpeed();
 
     Response *setResponse (const char **argv, int argc, OPS_Stream &output);
     int getResponse (int responseID, Information &matInformation);
@@ -103,6 +104,7 @@ class ManzariDafalias : public NDMaterial
 
 	virtual const Vector& getEStrain();
 	virtual const Vector& getPStrain();
+	virtual double getPWaveSpeed();
 
 
   protected:
