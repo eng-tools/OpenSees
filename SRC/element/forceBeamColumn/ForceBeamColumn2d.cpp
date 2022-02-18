@@ -417,7 +417,8 @@ ForceBeamColumn2d::ForceBeamColumn2d():
   kvcommit(NEBD,NEBD), Secommit(NEBD),
   fs(0), vs(0), Ssr(0), vscommit(0), 
   numEleLoads(0), sizeEleLoads(0), eleLoads(0), eleLoadFactors(0), load(6),
-  Ki(0), parameterID(0)
+  Ki(0), parameterID(0),
+  theDamping(0)
 {
   load.Zero();
 
@@ -432,7 +433,8 @@ ForceBeamColumn2d::ForceBeamColumn2d (int tag, int nodeI, int nodeJ,
 				      int numSec, SectionForceDeformation **sec,
 				      BeamIntegration &bi,
 				      CrdTransf &coordTransf, double massDensPerUnitLength,
-				      int maxNumIters, double tolerance):
+				      int maxNumIters, double tolerance,
+				      Damping *damping):
   Element(tag,ELE_TAG_ForceBeamColumn2d), connectedExternalNodes(2),
   beamIntegr(0), numSections(0), sections(0), crdTransf(0),
   rho(massDensPerUnitLength),maxIters(maxNumIters), tol(tolerance), 
@@ -441,7 +443,8 @@ ForceBeamColumn2d::ForceBeamColumn2d (int tag, int nodeI, int nodeJ,
   kvcommit(NEBD,NEBD), Secommit(NEBD),
   fs(0), vs(0),Ssr(0), vscommit(0), 
   numEleLoads(0), sizeEleLoads(0), eleLoads(0), eleLoadFactors(0), load(6),
-  Ki(0), parameterID(0)
+  Ki(0), parameterID(0),
+  theDamping(0)
 {
   load.Zero();
   
@@ -462,6 +465,16 @@ ForceBeamColumn2d::ForceBeamColumn2d (int tag, int nodeI, int nodeJ,
   if (crdTransf == 0) {
     opserr << "Error: ForceBeamColumn2d::ForceBeamColumn2d: could not create copy of coordinate transformation object" << endln;
     exit(-1);
+  }
+
+  if (damping)
+  {
+    theDamping =(*damping).getCopy();
+    
+    if (!theDamping) {
+      opserr << "Error: ForceBeamColumn2d::ForceBeamColumn2d: could not create copy of damping\n";
+      exit(-1);
+    }
   }
 
   this->setSectionPointers(numSec, sec);
@@ -507,6 +520,8 @@ ForceBeamColumn2d::~ForceBeamColumn2d()
   
   if (Ki != 0)
     delete Ki;
+
+	if (theDamping) delete theDamping;
 }
 
 int
@@ -583,6 +598,12 @@ ForceBeamColumn2d::setDomain(Domain *theDomain)
     exit(0);
   }
     
+  // initialize the damping
+  if (theDamping && theDamping->setDomain(theDomain, NEBD)) {
+    opserr << "ForceBeamColumn2d::setDomain(): Error initializing damping";  
+    exit(0);
+  }
+    
   // get element length
   double L = crdTransf->getInitialLength();
   if (L == 0.0) {
@@ -592,6 +613,26 @@ ForceBeamColumn2d::setDomain(Domain *theDomain)
 
   if (initialFlag == 0) 
     this->initializeSectionHistoryVariables();
+}
+
+int
+ForceBeamColumn2d::setDamping(Domain *theDomain, Damping *damping)
+{
+  if (theDomain && damping)
+  {
+    theDamping =(*damping).getCopy();
+    
+    if (!theDamping) {
+      opserr << "ForceBeamColumn2d::setDamping -- failed to get copy of damping\n";
+      exit(-1);
+    }
+    if (theDamping->setDomain(theDomain, NEBD)) {
+      opserr << "ForceBeamColumn2d::setDamping -- Error initializing damping\n";
+      exit(-1);
+    }
+  }
+  
+  return 0;
 }
 
 int
@@ -625,6 +666,9 @@ ForceBeamColumn2d::commitState()
   //   initialFlag = 0;  fmk - commented out, see what happens to Example3.1.tcl if uncommented
   //                         - i have not a clue why, ask remo if he ever gets in contact with us again!
   
+  if (theDamping && (err = theDamping->commitState()))
+    return err;
+
   return err;
 }
 
@@ -659,6 +703,9 @@ int ForceBeamColumn2d::revertToLastCommit()
   initialFlag = 0;
   // this->update();
   
+  if (theDamping && (err = theDamping->revertToLastCommit()))
+    return err;
+  
   return err;
 }
 
@@ -692,6 +739,10 @@ int ForceBeamColumn2d::revertToStart()
   
   initialFlag = 0;
   // this->update();
+
+  if (theDamping && (err = theDamping->revertToStart()))
+    return err;
+
   return err;
 }
 
@@ -727,6 +778,7 @@ ForceBeamColumn2d::getInitialStiff(void)
 
   static Matrix kvInit(NEBD, NEBD);
   f.Invert(kvInit);
+  if(theDamping) kvInit *= theDamping->getStiffnessMultiplier();
   Ki = new Matrix(crdTransf->getInitialGlobalStiffMatrix(kvInit));
   return *Ki;
 }
@@ -873,6 +925,14 @@ ForceBeamColumn2d::getResistingForce(void)
     theVector.addVector(1.0, load, -1.0);
 
   return theVector;
+}
+
+const Vector &
+ForceBeamColumn2d::getDampingForce(void)
+{
+  crdTransf->update();
+
+  return crdTransf->getGlobalResistingForce(theDamping->getDampingForce(), Vector(3));
 }
 
 void
@@ -1259,6 +1319,11 @@ ForceBeamColumn2d::update()
     } // for (int l=0; l<2; l++)
   } // while (converged == false)
 
+  if (theDamping)
+  {
+    kv *= theDamping->getStiffnessMultiplier();
+    theDamping->update(Se);
+  }
 
   // if fail to converge we return an error flag & print an error message
 
@@ -1681,6 +1746,8 @@ ForceBeamColumn2d::getResistingForceIncInertia()
 {	
   // Compute the current resisting force
   theVector = this->getResistingForce();
+
+  if (theDamping) theVector += this->getDampingForce();
 
   // Check for a quick return
   if (rho != 0.0) {
@@ -2539,6 +2606,39 @@ ForceBeamColumn2d::setResponse(const char **argv, int argc, OPS_Stream &output)
 
     theResponse =  new ElementResponse(this, 7, Vector(3));
 
+  // global damping force -
+  } else if (theDamping && (strcmp(argv[0],"globalDampingForce") == 0 || strcmp(argv[0],"globalDampingForces") == 0)) {
+
+    output.tag("ResponseType","Px_1");
+    output.tag("ResponseType","Py_1");
+    output.tag("ResponseType","Mz_1");
+    output.tag("ResponseType","Px_2");
+    output.tag("ResponseType","Py_2");
+    output.tag("ResponseType","Mz_2");
+
+    theResponse =  new ElementResponse(this, 21, theVector);
+
+  // local damping force -
+  } else if (theDamping && (strcmp(argv[0],"localDampingForce") == 0 || strcmp(argv[0],"localDampingForces") == 0)) {
+
+    output.tag("ResponseType","N_1");
+    output.tag("ResponseType","V_1");
+    output.tag("ResponseType","M_1");
+    output.tag("ResponseType","N_2");
+    output.tag("ResponseType","V_2");
+    output.tag("ResponseType","M_2");
+
+    theResponse =  new ElementResponse(this, 22, theVector);
+
+  // basic damping force -
+  } else if (theDamping && (strcmp(argv[0],"basicDampingForce") == 0 || strcmp(argv[0],"basicDampingForces") == 0)) {
+
+    output.tag("ResponseType","N");
+    output.tag("ResponseType","M_1");
+    output.tag("ResponseType","M_2");
+
+    theResponse =  new ElementResponse(this, 23, Vector(3));
+
   // basic stiffness -
   } else if (strcmp(argv[0],"basicStiffness") == 0) {
 
@@ -2848,6 +2948,25 @@ ForceBeamColumn2d::getResponse(int responseID, Information &eleInfo)
 
   else if (responseID == 7)
     return eleInfo.setVector(Se);
+
+  else if (responseID == 21)
+    return eleInfo.setVector(this->getDampingForce());
+
+  else if (responseID == 22) {
+    Vector Sd(NEBD);
+    Sd = theDamping->getDampingForce();
+    theVector(3) =  Sd(0);
+    theVector(0) = -Sd(0);
+    theVector(2) = Sd(1);
+    theVector(5) = Sd(2);
+    double V = (Sd(1)+Sd(2))/crdTransf->getInitialLength();
+    theVector(1) =  V;
+    theVector(4) = -V;
+    return eleInfo.setVector(theVector);
+  }
+
+  else if (responseID == 23)
+    return eleInfo.setVector(theDamping->getDampingForce());
 
   else if (responseID == 19)
     return eleInfo.setMatrix(kv);

@@ -189,7 +189,8 @@ ForceBeamColumn3d::ForceBeamColumn3d():
   kvcommit(NEBD,NEBD), Secommit(NEBD),
   fs(0), vs(0), Ssr(0), vscommit(0),
   numEleLoads(0), sizeEleLoads(0), eleLoads(0), eleLoadFactors(0), load(12),
-  Ki(0), isTorsion(false), parameterID(0)
+  Ki(0), isTorsion(false), parameterID(0),
+  theDamping(0)
 {
   load.Zero();
 
@@ -204,7 +205,8 @@ ForceBeamColumn3d::ForceBeamColumn3d (int tag, int nodeI, int nodeJ,
 				      int numSec, SectionForceDeformation **sec,
 				      BeamIntegration &bi,
 				      CrdTransf &coordTransf, double massDensPerUnitLength,
-				      int maxNumIters, double tolerance):
+				      int maxNumIters, double tolerance,
+				      Damping *damping):
   Element(tag,ELE_TAG_ForceBeamColumn3d), connectedExternalNodes(2),
   beamIntegr(0), numSections(0), sections(0), crdTransf(0),
   rho(massDensPerUnitLength),maxIters(maxNumIters), tol(tolerance), 
@@ -213,7 +215,8 @@ ForceBeamColumn3d::ForceBeamColumn3d (int tag, int nodeI, int nodeJ,
   kvcommit(NEBD,NEBD), Secommit(NEBD),
   fs(0), vs(0),Ssr(0), vscommit(0),
   numEleLoads(0), sizeEleLoads(0), eleLoads(0), eleLoadFactors(0), load(12),
-  Ki(0), isTorsion(false), parameterID(0)
+  Ki(0), isTorsion(false), parameterID(0),
+  theDamping(0)
 {
   load.Zero();
   
@@ -234,6 +237,16 @@ ForceBeamColumn3d::ForceBeamColumn3d (int tag, int nodeI, int nodeJ,
   if (crdTransf == 0) {
     opserr << "Error: ForceBeamColumn3d::ForceBeamColumn3d: could not create copy of coordinate transformation object" << endln;
     exit(-1);
+  }
+
+  if (damping)
+  {
+    theDamping =(*damping).getCopy();
+    
+    if (!theDamping) {
+      opserr << "Error: ForceBeamColumn3d::ForceBeamColumn3d: could not create copy of damping object\n";
+      exit(-1);
+    }
   }
 
   this->setSectionPointers(numSec, sec);
@@ -279,6 +292,8 @@ ForceBeamColumn3d::~ForceBeamColumn3d()
   
   if (Ki != 0)
     delete Ki;
+
+	if (theDamping) delete theDamping;
 }
 
 int
@@ -355,6 +370,12 @@ ForceBeamColumn3d::setDomain(Domain *theDomain)
     exit(0);
   }
     
+  // initialize the damping
+  if (theDamping && theDamping->setDomain(theDomain, NEBD)) {
+    opserr << "ForceBeamColumn3d::setDomain(): Error initializing damping";  
+    exit(0);
+  }
+    
   // get element length
   double L = crdTransf->getInitialLength();
   if (L == 0.0) {
@@ -364,6 +385,26 @@ ForceBeamColumn3d::setDomain(Domain *theDomain)
 
   if (initialFlag == 0) 
     this->initializeSectionHistoryVariables();
+}
+
+int
+ForceBeamColumn3d::setDamping(Domain *theDomain, Damping *damping)
+{
+  if (theDomain && damping)
+  {
+    theDamping =(*damping).getCopy();
+    
+    if (!theDamping) {
+      opserr << "ForceBeamColumn3d::setDamping -- failed to get copy of damping\n";
+      exit(-1);
+    }
+    if (theDamping->setDomain(theDomain, NEBD)) {
+      opserr << "ForceBeamColumn3d::setDamping -- Error initializing damping\n";
+      exit(-1);
+    }
+  }
+  
+  return 0;
 }
 
 int
@@ -397,6 +438,9 @@ ForceBeamColumn3d::commitState()
   //   initialFlag = 0;  fmk - commented out, see what happens to Example3.1.tcl if uncommented
   //                         - i have not a clue why, ask remo if he ever gets in contact with us again!
   
+  if (theDamping && (err = theDamping->commitState()))
+    return err;
+
   return err;
 }
 
@@ -431,6 +475,9 @@ int ForceBeamColumn3d::revertToLastCommit()
   initialFlag = 0;
   // this->update();
   
+  if (theDamping && (err = theDamping->revertToLastCommit()))
+    return err;
+
   return err;
 }
 
@@ -464,6 +511,10 @@ int ForceBeamColumn3d::revertToStart()
   
   initialFlag = 0;
   // this->update();
+
+  if (theDamping && (err = theDamping->revertToStart()))
+    return err;
+
   return err;
 }
 
@@ -488,6 +539,8 @@ ForceBeamColumn3d::getInitialStiff(void)
   static Matrix kvInit(NEBD, NEBD);
   if (f.Solve(I, kvInit) < 0)
     opserr << "ForceBeamColumn3d::getInitialStiff() -- could not invert flexibility";
+
+  if(theDamping) kvInit *= theDamping->getStiffnessMultiplier();
 
     Ki = new Matrix(crdTransf->getInitialGlobalStiffMatrix(kvInit));
 
@@ -654,6 +707,14 @@ ForceBeamColumn3d::getResistingForce(void)
     theVector.addVector(1.0, load, -1.0);
   
   return theVector;
+}
+
+const Vector &
+ForceBeamColumn3d::getDampingForce(void)
+{
+  crdTransf->update();
+
+  return crdTransf->getGlobalResistingForce(theDamping->getDampingForce(), Vector(5));
 }
 
 void
@@ -1119,6 +1180,12 @@ void
 	} // if (initialFlag != 2)
       } // for (int l=0; l<2; l++)
     } // while (converged == false)
+
+  if (theDamping)
+  {
+    kv *= theDamping->getStiffnessMultiplier();
+    theDamping->update(Se);
+  }
 
     // if fail to converge we return an error flag & print an error message
 
@@ -1640,6 +1707,8 @@ ForceBeamColumn3d::computeSectionForceSensitivity(Vector &dspdh, int isec,
   {	
     // Compute the current resisting force
     theVector = this->getResistingForce();
+
+    if (theDamping) theVector += this->getDampingForce();
 
     if (rho != 0.0) {
       const Vector &accel1 = theNodes[0]->getTrialAccel();
@@ -2651,6 +2720,54 @@ ForceBeamColumn3d::getInitialDeformations(Vector &v0)
       
       theResponse =  new ElementResponse(this, 19, Matrix(6,6));
       
+    //global damping force -
+    } else if (theDamping && (strcmp(argv[0],"globalDampingForce") == 0 || strcmp(argv[0],"globalDampingForces") == 0)) {
+
+      output.tag("ResponseType","Px_1");
+      output.tag("ResponseType","Py_1");
+      output.tag("ResponseType","Pz_1");
+      output.tag("ResponseType","Mx_1");
+      output.tag("ResponseType","My_1");
+      output.tag("ResponseType","Mz_1");
+      output.tag("ResponseType","Px_2");
+      output.tag("ResponseType","Py_2");
+      output.tag("ResponseType","Pz_2");
+      output.tag("ResponseType","Mx_2");
+      output.tag("ResponseType","My_2");
+      output.tag("ResponseType","Mz_2");
+
+
+      theResponse = new ElementResponse(this, 21, theVector);
+
+    // local damping force -
+    } else if (theDamping && (strcmp(argv[0],"localDampingForce") == 0 || strcmp(argv[0],"localDampingForces") == 0)) {
+
+      output.tag("ResponseType","N_1");
+      output.tag("ResponseType","Vy_1");
+      output.tag("ResponseType","Vz_1");
+      output.tag("ResponseType","T_1");
+      output.tag("ResponseType","My_1");
+      output.tag("ResponseType","Mz_1");
+      output.tag("ResponseType","N_2");
+      output.tag("ResponseType","Vy_2");
+      output.tag("ResponseType","Vz_2");
+      output.tag("ResponseType","T_2");
+      output.tag("ResponseType","My_2");
+      output.tag("ResponseType","Mz_2");
+      
+      theResponse = new ElementResponse(this, 22, theVector);
+
+    } else if (theDamping && (strcmp(argv[0],"basicDampingForce") == 0 || strcmp(argv[0],"basicDampingForces") == 0)) {
+
+      output.tag("ResponseType","N");
+      output.tag("ResponseType","Mz_1");
+      output.tag("ResponseType","Mz_2");
+      output.tag("ResponseType","My_1");
+      output.tag("ResponseType","My_2");
+      output.tag("ResponseType","T");
+    
+      theResponse = new ElementResponse(this, 23, Vector(6));
+      
     // chord rotation -
     }  else if (strcmp(argv[0],"chordRotation") == 0 || strcmp(argv[0],"chordDeformation") == 0 
 		|| strcmp(argv[0],"basicDeformation") == 0) {
@@ -2859,6 +2976,47 @@ ForceBeamColumn3d::getResponse(int responseID, Information &eleInfo)
     return eleInfo.setVector(theVector);
 
   }
+      
+  else if (responseID == 21)
+    return eleInfo.setVector(this->getDampingForce());
+
+  else if (responseID == 22) {
+    Vector Sd(NEBD);
+    Sd = theDamping->getDampingForce();
+    // Axial
+    double N = Sd(0);
+    theVector(6) =  N;
+    theVector(0) = -N;
+    
+    // Torsion
+    double T = Sd(5);
+    theVector(9) =  T;
+    theVector(3) = -T;
+    
+    // Moments about z and shears along y
+    double M1 = Sd(1);
+    double M2 = Sd(2);
+    theVector(5)  = M1;
+    theVector(11) = M2;
+    double L = crdTransf->getInitialLength();
+    double V = (M1+M2)/L;
+    theVector(1) =  V;
+    theVector(7) = -V;
+    
+    // Moments about y and shears along z
+    M1 = Sd(3);
+    M2 = Sd(4);
+    theVector(4)  = M1;
+    theVector(10) = M2;
+    V = (M1+M2)/L;
+    theVector(2) = -V;
+    theVector(8) =  V;
+      
+    return eleInfo.setVector(theVector);
+  }
+
+  else if (responseID == 23)
+    return eleInfo.setVector(theDamping->getDampingForce());
       
   // Chord rotation
   else if (responseID == 3) {

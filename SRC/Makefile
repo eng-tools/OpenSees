@@ -27,6 +27,7 @@ all:
 	@$(CD) $(FE)/handler; $(MAKE);
 	@$(CD) $(FE)/actor; $(MAKE);
 	@$(CD) $(FE)/machine; $(MAKE);
+	@$(CD) $(FE)/damping; $(MAKE);
 	@$(CD) $(FE)/element; $(MAKE);
 	@$(CD) $(FE)/coordTransformation; $(MAKE);
 	@$(CD) $(FE)/api; $(MAKE);
@@ -50,6 +51,7 @@ all:
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(TAGGED_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(UTILITY_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ACTOR_LIBS)
+	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DAMPING_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(RECORDER_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(LAW_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(GGD_LIBS)
@@ -87,6 +89,7 @@ all:
 	@$(CD) $(FE)/handler; $(MAKE);
 	@$(CD) $(FE)/actor; $(MAKE);
 	@$(CD) $(FE)/machine; $(MAKE);
+	@$(CD) $(FE)/damping; $(MAKE);
 	@$(CD) $(FE)/element; $(MAKE);
 	@$(CD) $(FE)/coordTransformation; $(MAKE);
 	@$(CD) $(FE)/api; $(MAKE);
@@ -104,6 +107,7 @@ all:
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(PY_SJB_RWB_BJ_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ANALYSIS_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SysOfEqn_LIBS)
+	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DAMPING_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(GRAPH_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(TAGGED_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(UTILITY_LIBS)
@@ -136,6 +140,7 @@ TCL_COMMAND_LIBS = $(FE)/domain/pattern/TclPatternCommand.o \
 	$(FE)/element/zeroLength/TclZeroLength.o \
 	$(FE)/element/forceBeamColumn/TclForceBeamColumnCommand.o \
 	$(FE)/coordTransformation/TclGeomTransfCommand.o \
+	$(FE)/damping/TclDampingCommand.o \
 	$(FE)/element/joint/TclJoint2dCommand.o \
 	$(FE)/element/joint/TclJoint3dCommand.o \
 	$(FE)/element/joint/TclBeamColumnJointCommand.o \
@@ -1434,6 +1439,13 @@ ACTOR_LIBS = $(FE)/actor/channel/Channel.o \
 	$(FE)/actor/actor/MovableObject.o \
 	$(FE)/actor/shadow/Shadow.o \
 	$(FE)/actor/address/ChannelAddress.o
+
+DAMPING_LIBS = $(FE)/damping/Damping.o \
+	$(FE)/damping/SecStifDamping.o \
+	$(FE)/damping/UniformDamping.o \
+	$(FE)/damping/URDDamping.o \
+	$(FE)/damping/URDDampingbeta.o \
+	$(FE)/damping/TclDampingCommand.o
 
 # Miscellaneous
 
