@@ -21,7 +21,6 @@ find_path(MUMPS_INCLUDE_DIR
 if(NOT MUMPS_INCLUDE_DIR)
   return()
 endif()
-message(STATUS "MUMPS found")
 
 # get Mumps version
 find_file(mumps_conf
@@ -31,7 +30,6 @@ NO_DEFAULT_PATH
 )
 
 if(mumps_conf)
-  message(STATUS "get version number.")
   file(STRINGS ${mumps_conf} _def
   REGEX "^[ \t]*#[ \t]*define[ \t]+MUMPS_VERSION[ \t]+" )
   if("${_def}" MATCHES "MUMPS_VERSION[ \t]+\"([0-9]+\\.[0-9]+\\.[0-9]+)?\"")
@@ -61,8 +59,6 @@ find_library(PORD
 if(NOT PORD)
   return()
 endif()
-
-message(STATUS "MUMPS_common and PORD found.")
 
 set(MUMPS_LIBRARIES ${MUMPS_LIBRARY} ${MUMPS_COMMON} ${PORD} PARENT_SCOPE)
 set(MUMPS_INCLUDE_DIR ${MUMPS_INCLUDE_DIR} PARENT_SCOPE)
