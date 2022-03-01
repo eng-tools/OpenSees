@@ -243,6 +243,8 @@ find_package(BLAS)
 find_package(LAPACK)
 find_package (Python COMPONENTS Interpreter Development)
 find_package(MPI)
+find_package(METIS)
+find_package(MUMPS)
 
 #set (LAPACK_FOUND FALSE)
 #set (BLAS_FOUND FALSE)
@@ -254,6 +256,17 @@ if(LAPACK_FOUND)
 else()
   add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/LAPACK")
   set(LAPACK_LIBRARIES LAPACK)
+endif()
+if(METIS_FOUND)
+  message(STATUS "METIS was found.")
+  message(STATUS "METIS_LINKER_FLAGS = ${METIS_LINKER_FLAGS}")
+  message(STATUS "METIS_LIBRARIES = ${METIS_LIBRARIES}" )
+endif()
+if(MUMPS_FOUND)
+  message(STATUS "MUMPS was found.")
+  message(STATUS "MUMPS ${MUMPS_VERSION}")
+else()
+  message(STATUS "MUMPS NOT found.")
 endif()
 
 if(PYTHON_FOUND)
@@ -514,6 +527,8 @@ target_link_libraries(OpenSeesMP
                       ${CONAN_LIBS}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
+                      ${METIS_LIBRARIES}
+                      ${MUMPS_LIBRARIES}
                       ${MPI_C_LIBRARIES}
 )
 
