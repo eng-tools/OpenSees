@@ -224,6 +224,8 @@ include_directories(${OPS_INCLUDE_DIRS})
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/SuperLU_5.1.1")
 set (SUPERLU_LIBRARIES SUPERLU)
+add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/SuperLU_DIST_4.3")
+set (SUPERLU_DIST_LIBRARIES SUPERLU_DIST)
 add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/UMFPACK")
 set (UMFPACK_LIBRARIES UMFPACK)
 add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/AMD")
@@ -277,6 +279,7 @@ message("OPS >>> BLAS:    ${BLAS_LIBRARIES}")
 message("OPS >>> CBLAS:   ${CBLAS_LIBRARY}\n")
 message("OPS >>> LAPACK:  ${LAPACK_LIBRARIES}")
 message("OPS >>> SUPERLU: ${SUPERLU_LIBRARIES}")
+message("OPS >>> SUPERLU_DIST: ${SUPERLU_DIST_LIBRARIES}")
 message("OPS >>> ARPACK:  ${ARPACK_LIBRARIES}")
 message("OPS >>> UMFPACK: ${UMFPACK_LIBRARIES}")
 message("OPS >>> CSPARSE: ${CSPARSE_LIBRARIES}")
@@ -498,8 +501,21 @@ add_executable(OpenSeesMP EXCLUDE_FROM_ALL
 target_compile_definitions(OpenSeesMP 
     PUBLIC _PARALLEL_INTERPRETERS
 )
-target_link_libraries(OpenSeesMP OpenSeesLIB)
-
+target_link_libraries(OpenSeesMP
+                      OPS_InterpTcl
+                      OpenSeesLIB
+                      ${HDF5_LIBRARIES}
+                      ${CSPARSE_LIBRARIES}
+                      ${SUPERLU_DIST_LIBRARIES}
+                      ${SUPERLU_LIBRARIES}
+                      ${UMFPACK_LIBRARIES}
+                      ${AMD_LIBRARIES}
+                      ${TRIANGLE_LIBRARIES}
+                      ${CONAN_LIBS}
+                      ${LAPACK_LIBRARIES}
+                      ${BLAS_LIBRARIES}
+                      ${MPI_C_LIBRARIES}
+)
 
 #
 # OpenSeesPy Module
