@@ -256,6 +256,17 @@ if(DEFINED ENV{METIS_DIR})
 	link_directories($ENV{METIS_DIR}/lib)
 	set(METIS_LIBRARIES metis)
 endif()
+if(DEFINED ENV{SCOTCH_DIR})
+	link_directories($ENV{SCOTCH_DIR}/lib)
+	set(SCOTCH_LIBRARIES esmumps ptscotch scotch scotcherr)
+endif()
+if(DEFINED ENV{SCALAPACK_LIBRARIES})
+	set(SCALAPACK_LIBRARIES $ENV{SCALAPACK_LIBRARIES})
+endif()
+if(DEFINED ENV{BLACS_LIBRARIES})
+	set(BLACS_LIBRARIES $ENV{BLACS_LIBRARIES})
+endif()
+
 
 
 #set (LAPACK_FOUND FALSE)
@@ -302,6 +313,9 @@ message("OPS >>> AMD:     ${AMD_LIBRARIES}")
 message("OPS >>> TETGEN:     ${TETGEN_LIBRARIES}")
 message("OPS >>> MUMPS:   ${MUMPS_LIBRARIES}")
 message("OPS >>> METIS:   ${METIS_LIBRARIES}")
+message("OPS >>> SCOTCH:  ${SCOTCH_LIBRARIES}")
+message("OPS >>> SCALAPACK:  ${SCALAPACK_LIBRARIES}")
+message("OPS >>> BLACS:   ${BLACS_LIBRARIES}")
 
 add_library(OPS_Numerics INTERFACE)
 
@@ -520,20 +534,23 @@ target_compile_definitions(OpenSeesMP
 target_link_libraries(OpenSeesMP
                       OPS_InterpTcl
                       OpenSeesLIB
-		      #${MUMPS_LIBRARIES}
-		      ${ARPACK_LIBRARIES}
+                      ${MUMPS_LIBRARIES}
+                      ${ARPACK_LIBRARIES}
                       ${CSPARSE_LIBRARIES}
                       ${SUPERLU_DIST_LIBRARIES}
                       ${SUPERLU_LIBRARIES}
                       ${UMFPACK_LIBRARIES}
                       ${AMD_LIBRARIES}
-		      ${METIS_LIBRARIES}
+                      ${SCOTCH_LIBRARIES}
+                      ${METIS_LIBRARIES}
                       ${TRIANGLE_LIBRARIES}
                       ${CONAN_LIBS}
                       ${HDF5_LIBRARIES}
+                      ${SCALAPACK_LIBRARIES}
+                      ${BLACS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
-		      ${MPI_Fortran_LIBRARIES}
+                      ${MPI_Fortran_LIBRARIES}
                       ${MPI_C_LIBRARIES}
 )
 
