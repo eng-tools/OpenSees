@@ -243,6 +243,16 @@ find_package(BLAS)
 find_package(LAPACK)
 find_package (Python COMPONENTS Interpreter Development)
 find_package(MPI)
+#find_package(MUMPS COMPONENTS d) # this does not work
+if(DEFINED ENV{MUMPS_DIR})
+	link_directories($ENV{MUMPS_DIR}/lib)
+	set(MUMPS_LIBRARIES dmumps mumps_common pord)
+endif()
+if(DEFINED ENV{ARPACK_DIR})
+	link_directories($ENV{ARPACK_DIR}/lib64 $ENV{ARPACK_DIR}/lib)
+	set(ARPACK_LIBRARIES arpack)
+endif()
+
 
 #set (LAPACK_FOUND FALSE)
 #set (BLAS_FOUND FALSE)
@@ -286,6 +296,7 @@ message("OPS >>> CSPARSE: ${CSPARSE_LIBRARIES}")
 message("OPS >>> TCL:     ${TCL_LIBRARY}")
 message("OPS >>> AMD:     ${AMD_LIBRARIES}")
 message("OPS >>> TETGEN:     ${TETGEN_LIBRARIES}")
+message("OPS >>> MUMPS:   ${MUMPS_LIBRARIES}")
 
 add_library(OPS_Numerics INTERFACE)
 
@@ -504,7 +515,8 @@ target_compile_definitions(OpenSeesMP
 target_link_libraries(OpenSeesMP
                       OPS_InterpTcl
                       OpenSeesLIB
-                      ${HDF5_LIBRARIES}
+		      #${MUMPS_LIBRARIES}
+		      ${ARPACK_LIBRARIES}
                       ${CSPARSE_LIBRARIES}
                       ${SUPERLU_DIST_LIBRARIES}
                       ${SUPERLU_LIBRARIES}
@@ -512,8 +524,10 @@ target_link_libraries(OpenSeesMP
                       ${AMD_LIBRARIES}
                       ${TRIANGLE_LIBRARIES}
                       ${CONAN_LIBS}
+                      ${HDF5_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
+		      ${MPI_Fortran_LIBRARIES}
                       ${MPI_C_LIBRARIES}
 )
 
