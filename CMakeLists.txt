@@ -252,6 +252,10 @@ if(DEFINED ENV{ARPACK_DIR})
 	link_directories($ENV{ARPACK_DIR}/lib64 $ENV{ARPACK_DIR}/lib)
 	set(ARPACK_LIBRARIES arpack)
 endif()
+if(DEFINED ENV{METIS_DIR})
+	link_directories($ENV{METIS_DIR}/lib)
+	set(METIS_LIBRARIES metis)
+endif()
 
 
 #set (LAPACK_FOUND FALSE)
@@ -297,6 +301,7 @@ message("OPS >>> TCL:     ${TCL_LIBRARY}")
 message("OPS >>> AMD:     ${AMD_LIBRARIES}")
 message("OPS >>> TETGEN:     ${TETGEN_LIBRARIES}")
 message("OPS >>> MUMPS:   ${MUMPS_LIBRARIES}")
+message("OPS >>> METIS:   ${METIS_LIBRARIES}")
 
 add_library(OPS_Numerics INTERFACE)
 
@@ -522,6 +527,7 @@ target_link_libraries(OpenSeesMP
                       ${SUPERLU_LIBRARIES}
                       ${UMFPACK_LIBRARIES}
                       ${AMD_LIBRARIES}
+		      ${METIS_LIBRARIES}
                       ${TRIANGLE_LIBRARIES}
                       ${CONAN_LIBS}
                       ${HDF5_LIBRARIES}
