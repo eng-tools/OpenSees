@@ -412,7 +412,7 @@ target_link_libraries(G3
 #
 
 add_library(OpenSeesLIB  EXCLUDE_FROM_ALL)
-
+target_include_directories(OpenSeesLIB PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
 target_link_libraries(OpenSeesLIB
     ${OPS_Extension_List}
     OPS_Actor 
@@ -527,20 +527,25 @@ target_compile_definitions(OpenSeesMP
 target_include_directories(OpenSeesMP PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
 target_link_libraries(OpenSeesMP
                       OPS_InterpTcl
-                      OpenSeesLIB
-                      ${HDF5_LIBRARIES}
+                      OPS_Numerics
+                      ${CMAKE_DL_LIBS}
+                      ${ARPACK_LIBRARIES}
                       ${CSPARSE_LIBRARIES}
                       ${SUPERLU_DIST_LIBRARIES}
                       ${SUPERLU_LIBRARIES}
                       ${UMFPACK_LIBRARIES}
                       ${AMD_LIBRARIES}
                       ${TRIANGLE_LIBRARIES}
+                      ${MYSQL_LIBRARIES}
                       ${CONAN_LIBS}
+                      ${HDF5_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
                       ${METIS_LIBRARIES}
                       ${MUMPS_LIBRARIES}
+                      ${MPI_Fortran_LIBRARIES}
                       ${MPI_C_LIBRARIES}
+                      OpenSeesLIB
 )
 
 #
