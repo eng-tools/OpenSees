@@ -27,6 +27,12 @@ target_sources(OpenSeesSP
        MPI_MachineBroker.h
 )
 
+target_sources(OpenSeesPy
+    PRIVATE
+      MPI_MachineBroker.cpp
+    PUBLIC
+      MPI_MachineBroker.h
+)
 
 target_include_directories(OPS_Actor PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 

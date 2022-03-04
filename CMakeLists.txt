@@ -525,6 +525,25 @@ target_compile_definitions(OpenSeesMP
     PUBLIC _PARALLEL_INTERPRETERS
 )
 target_include_directories(OpenSeesMP PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
+
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+  target_include_directories(OpenSeesMP PUBLIC ${TCL_INCLUDE_PATH})
+
+  FILE(COPY ${CONAN_LIB_DIRS_TCL}/tcl8.6
+       DESTINATION ${PROJECT_BINARY_DIR}/lib/tcl8.6
+       FILES_MATCHING PATTERN .tcl)
+
+else ()
+     FILE(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib/tcl8.6)
+     add_custom_command(
+     	TARGET OpenSeesMP POST_BUILD
+	COMMENT("Copying init.tcl to ${CMAKE_CURRENT_BINARY_DIR}")
+     	COMMAND ${CMAKE_COMMAND} -E copy
+        ${CONAN_LIB_DIRS_TCL}/tcl8.6/init.tcl
+	${CMAKE_CURRENT_BINARY_DIR}/lib/tcl8.6
+     )
+endif()
+
 target_link_libraries(OpenSeesMP
                       OPS_InterpTcl
                       OPS_Numerics
@@ -556,15 +575,34 @@ add_library(OpenSeesPy SHARED EXCLUDE_FROM_ALL)
 
 set_target_properties(OpenSeesPy PROPERTIES PREFIX "")
 target_compile_options(OpenSeesPy PUBLIC -fPIC)
-target_include_directories(OpenSeesPy PUBLIC ${Python_INCLUDE_DIRS})
+target_compile_definitions(OpenSeesPy
+    PUBLIC _PARALLEL_INTERPRETERS
+)
+
+target_include_directories(OpenSeesPy PUBLIC ${Python_INCLUDE_DIRS} ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
 
 target_link_libraries(OpenSeesPy
-   OpenSeesLIB 
-   OPS_Reliability
-   OPS_Numerics 
-   ${HDF5_LIBRARIES} 
-   ${CONAN_LIBRARIES} 
-   ${Python_LIBRARIES}
+  OPS_Numerics
+  ${CMAKE_DL_LIBS}
+  ${ARPACK_LIBRARIES}
+  ${CSPARSE_LIBRARIES}
+  ${SUPERLU_DIST_LIBRARIES}
+  ${SUPERLU_LIBRARIES}
+  ${UMFPACK_LIBRARIES}
+  ${AMD_LIBRARIES}
+  ${TRIANGLE_LIBRARIES}
+  ${MYSQL_LIBRARIES}
+  ${CONAN_LIBS}
+  ${HDF5_LIBRARIES}
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES}
+  ${METIS_LIBRARIES}
+  ${MUMPS_LIBRARIES}
+  ${MPI_Fortran_LIBRARIES}
+  ${MPI_C_LIBRARIES}
+  OpenSeesLIB
+  OPS_Reliability
+  ${Python_LIBRARIES}
 )
 
 
@@ -655,11 +693,12 @@ endif()
 
 # Reliability
 #----------------------------
-if ("OPS_Reliability" IN_LIST OPS_Extension_List)
-    add_compile_definitions(_RELIABILITY)
-    target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
-endif()
-
+# message(STATUS "Ext list ${OPS_Extension_List}")
+# if ("OPS_Reliability" IN_LIST OPS_Extension_List)
+#     add_compile_definitions(_RELIABILITY)
+#     target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
+# endif()
+target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
 
 #----------------------------
 # HDF5
