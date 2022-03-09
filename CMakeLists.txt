@@ -525,7 +525,7 @@ target_link_libraries(OpenSeesSP OpenSeesLIB)
 
 add_executable(OpenSeesMP EXCLUDE_FROM_ALL 
   ${OPS_SRC_DIR}/tcl/mpiParameterMain.cpp
-  #${OPS_SRC_DIR}/tcl/mpiMain.cpp
+  ${OPS_SRC_DIR}/tcl/tclMain.cpp
 )
 
 target_compile_definitions(OpenSeesMP 
