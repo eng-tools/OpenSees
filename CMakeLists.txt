@@ -574,7 +574,7 @@ target_link_libraries(OpenSeesMP
 add_library(OpenSeesPy SHARED EXCLUDE_FROM_ALL)
 
 set_target_properties(OpenSeesPy PROPERTIES PREFIX "")
-target_compile_options(OpenSeesPy PUBLIC -fPIC)
+target_compile_options(OpenSeesPy PUBLIC -fPIC -shared)
 target_compile_definitions(OpenSeesPy
     PUBLIC _PARALLEL_INTERPRETERS
 )
