@@ -119,7 +119,7 @@ enable_language(Fortran)
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> cqls <TARGET> <LINK_FLAGS> <OBJECTS>")
-#add_compile_options(-g)
+# add_compile_options(-g)
 
 # Warnings
 #opensees_add_cxx_flag(
@@ -524,12 +524,12 @@ target_link_libraries(OpenSeesSP OpenSeesLIB)
 #
 
 add_executable(OpenSeesMP EXCLUDE_FROM_ALL 
-  ${OPS_SRC_DIR}/tcl/tclAppInit.cpp
-  ${OPS_SRC_DIR}/tcl/tclMain.cpp
+  ${OPS_SRC_DIR}/tcl/mpiParameterMain.cpp
+  #${OPS_SRC_DIR}/tcl/mpiMain.cpp
 )
 
 target_compile_definitions(OpenSeesMP 
-    PUBLIC _PARALLEL_INTERPRETERS
+    PUBLIC _PARALLEL_PROCESSING _PARALLEL_INTERPRETERS
 )
 target_link_libraries(OpenSeesMP
                       OPS_InterpTcl
@@ -544,14 +544,13 @@ target_link_libraries(OpenSeesMP
                       ${SCOTCH_LIBRARIES}
                       ${METIS_LIBRARIES}
                       ${TRIANGLE_LIBRARIES}
-                      ${CONAN_LIBS}
-                      ${HDF5_LIBRARIES}
                       ${SCALAPACK_LIBRARIES}
                       ${BLACS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
                       ${MPI_Fortran_LIBRARIES}
                       ${MPI_C_LIBRARIES}
+                      ${CONAN_LIBS}
 )
 
 #
@@ -572,6 +571,45 @@ target_link_libraries(OpenSeesPy
    ${CONAN_LIBRARIES} 
    ${Python_LIBRARIES}
 )
+
+
+#
+# OpenSeesPy Parallel Module
+#
+
+add_library(OpenSeesPyMP SHARED EXCLUDE_FROM_ALL)
+
+set_target_properties(OpenSeesPyMP PROPERTIES PREFIX "")
+target_compile_options(OpenSeesPyMP PUBLIC -fPIC)
+target_include_directories(OpenSeesPyMP PUBLIC ${Python_INCLUDE_DIRS})
+target_compile_definitions(OpenSeesPyMP 
+    PUBLIC _PARALLEL_PROCESSING _PARALLEL_INTERPRETERS
+)
+
+target_link_libraries(OpenSeesPyMP
+   OpenSeesLIB 
+   OPS_Reliability
+  ${MUMPS_LIBRARIES}
+  ${ARPACK_LIBRARIES}
+  ${CSPARSE_LIBRARIES}
+  ${SUPERLU_DIST_LIBRARIES}
+  ${SUPERLU_LIBRARIES}
+  ${UMFPACK_LIBRARIES}
+  ${AMD_LIBRARIES}
+  ${SCOTCH_LIBRARIES}
+  ${METIS_LIBRARIES}
+  ${TRIANGLE_LIBRARIES}
+  ${SCALAPACK_LIBRARIES}
+  ${BLACS_LIBRARIES}
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES}
+  ${MPI_Fortran_LIBRARIES}
+  ${MPI_C_LIBRARIES}
+   ${HDF5_LIBRARIES} 
+   ${CONAN_LIBRARIES} 
+   ${Python_LIBRARIES}
+)
+
 
 
 #
