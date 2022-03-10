@@ -58,14 +58,15 @@ target_sources(OpenSeesMP
         DistributedSparseGenRowLinSOE.cpp
         PFEMSolver_Mumps.cpp
         PFEMSolver_LumpM.cpp
-        PFEMCompressibleSolver_Mumps.cpp
+        #PFEMCompressibleSolver_Mumps.cpp
     PUBLIC
         DistributedSuperLU.h
         DistributedSparseGenColLinSOE.h
         DistributedSparseGenRowLinSOE.h
         PFEMSolver_Mumps.h
-        PFEMCompressibleSolver_Mumps.h
+        #PFEMCompressibleSolver_Mumps.h
 )
 
-target_include_directories(OPS_SysOfEqn PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+find_package(MUMPS)
+target_include_directories(OPS_SysOfEqn PUBLIC ${CMAKE_CURRENT_LIST_DIR}  ${MUMPS_INCLUDE_DIRS})
 

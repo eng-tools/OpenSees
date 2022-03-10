@@ -1,5 +1,6 @@
 set(SUPERLU_DIST_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/SRC")
-include_directories(${SUPERLU_DIST_SRC_DIR})
+find_package(MPI)
+include_directories(${SUPERLU_DIST_SRC_DIR} ${MPI_C_INCLUDE_DIRS})
 
 # auxillary routines
 add_library(SUPERLU_DIST_ALLAUX OBJECT

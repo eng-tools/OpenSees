@@ -10,6 +10,16 @@
 # directory
 
 #target_sources(OPS_Tcl PRIVATE tclMain.cpp)
+find_package(MPI)
+if(MPI_FOUND)
+  message(STATUS "MPI was found.")
+  message(STATUS "MPI version: ${MPI_C_VERSION}")
+  message(STATUS "MPI_INCLUDE_DIR = ${MPI_C_INCLUDE_DIRS}")
+  message(STATUS "MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}" )
+else()
+  message(STATUS "MPI NOT found.")
+endif()
+target_include_directories(OPS_InterpTcl PRIVATE ${MPI_C_INCLUDE_DIRS})
 
 target_sources(OPS_InterpTcl PRIVATE 
     "${OPS_SRC_DIR}/coordTransformation/TclGeomTransfCommand.cpp"
@@ -101,5 +111,21 @@ target_sources(OPS_InterpTcl PRIVATE
     #"${OPS_SRC_DIR}/system_of_eqn/linearSOE/petsc/TclPetsc.cpp"
     #"${OPS_SRC_DIR}/tcl/TclVideoPlayer.cpp"
 )
+
+# target_sources(OpenSeesMP
+#     PRIVATE
+#         DistributedSuperLU.cpp
+#         DistributedSparseGenColLinSOE.cpp
+#         DistributedSparseGenRowLinSOE.cpp
+#         PFEMSolver_Mumps.cpp
+#         PFEMSolver_LumpM.cpp
+#         PFEMCompressibleSolver_Mumps.cpp
+#     PUBLIC
+#         DistributedSuperLU.h
+#         DistributedSparseGenColLinSOE.h
+#         DistributedSparseGenRowLinSOE.h
+#         PFEMSolver_Mumps.h
+#         PFEMCompressibleSolver_Mumps.h
+# )
 
 

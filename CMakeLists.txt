@@ -252,10 +252,10 @@ if(DEFINED ENV{ARPACK_DIR})
 	link_directories($ENV{ARPACK_DIR}/lib64 $ENV{ARPACK_DIR}/lib)
 	set(ARPACK_LIBRARIES arpack)
 endif()
-if(DEFINED ENV{METIS_DIR})
-	link_directories($ENV{METIS_DIR}/lib)
-	set(METIS_LIBRARIES metis)
-endif()
+# if(DEFINED ENV{METIS_DIR})
+# 	link_directories($ENV{METIS_DIR}/lib)
+# 	set(METIS_LIBRARIES metis)
+# endif()
 if(DEFINED ENV{SCOTCH_DIR})
 	link_directories($ENV{SCOTCH_DIR}/lib)
 	set(SCOTCH_LIBRARIES esmumps ptscotch scotch scotcherr)
@@ -267,6 +267,26 @@ if(DEFINED ENV{BLACS_LIBRARIES})
 	set(BLACS_LIBRARIES $ENV{BLACS_LIBRARIES})
 endif()
 
+find_package(METIS)
+if(METIS_FOUND)
+  message(STATUS "METIS was found.")
+  message(STATUS "METIS_INCLUDES = ${METIS_INCLUDES}")
+  message(STATUS "METIS_LINKER_FLAGS = ${METIS_LINKER_FLAGS}")
+  message(STATUS "METIS_LIBRARIES = ${METIS_LIBRARIES}" )
+else()
+  message(STATUS "METIS NOT found.")
+endif()
+
+find_package(MYSQL)
+if(MYSQL_FOUND)
+  message(STATUS "MYSQL was found.")
+  message(STATUS "MYSQL version: ${MYSQL_VERSION}")
+  message(STATUS "MYSQL_INCLUDE_DIR = ${MYSQL_INCLUDE_DIRS}")
+  message(STATUS "MYSQL_LIBRARIES = ${MYSQL_LIBRARIES}" )
+else()
+  message(STATUS "MYSQL NOT found.")
+  message(STATUS "MYSQL_INCLUDE_DIR = ${MYSQL_INCLUDE_DIRS}")
+endif()
 
 
 #set (LAPACK_FOUND FALSE)
@@ -279,6 +299,15 @@ if(LAPACK_FOUND)
 else()
   add_subdirectory("${PROJECT_SOURCE_DIR}/OTHER/LAPACK")
   set(LAPACK_LIBRARIES LAPACK)
+endif()
+
+if(MPI_FOUND)
+  message(STATUS "MPI was found.")
+  message(STATUS "MPI version: ${MPI_C_VERSION}")
+  message(STATUS "MPI_INCLUDE_DIR = ${MPI_C_INCLUDE_DIRS}")
+  message(STATUS "MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}" )
+else()
+  message(STATUS "MPI NOT found.")
 endif()
 
 if(PYTHON_FOUND)
@@ -451,6 +480,8 @@ target_link_libraries(OpenSeesLIB
     OPS_OS_Specific_libs
     OPS_Tagged 
     OPS_Utilities
+    ${MPI_Fortran_LIBRARIES}
+    ${MPI_C_LIBRARIES}
 )
 
 
@@ -528,10 +559,22 @@ add_executable(OpenSeesMP EXCLUDE_FROM_ALL
   ${OPS_SRC_DIR}/tcl/tclMain.cpp
 )
 
+target_include_directories(OpenSeesMP PUBLIC
+  ${TCL_INCLUDE_PATH}
+  ${MPI_C_INCLUDE_DIRS}
+  ${METIS_INCLUDES}
+  ${HDF5_INCLUDE_DIR}
+  ${HDF5_INCLUDE_DIR}/H5public.h
+  ${HDF5_INCLUDE_DIR}/hdf5.h
+)
+
 target_compile_definitions(OpenSeesMP 
     PUBLIC _PARALLEL_PROCESSING _PARALLEL_INTERPRETERS
 )
 target_link_libraries(OpenSeesMP
+                      ${MPI_Fortran_LIBRARIES}
+                      ${MPI_C_LIBRARIES}
+                      ${HDF5_LIBRARIES}
                       OPS_InterpTcl
                       OpenSeesLIB
                       ${MUMPS_LIBRARIES}
@@ -548,8 +591,6 @@ target_link_libraries(OpenSeesMP
                       ${BLACS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
-                      ${MPI_Fortran_LIBRARIES}
-                      ${MPI_C_LIBRARIES}
                       ${CONAN_LIBS}
 )
 
