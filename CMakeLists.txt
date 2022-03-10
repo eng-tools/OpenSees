@@ -565,7 +565,7 @@ target_include_directories(OpenSeesMP PUBLIC
 )
 
 target_compile_definitions(OpenSeesMP 
-    PUBLIC _PARALLEL_PROCESSING _PARALLEL_INTERPRETERS
+    PUBLIC _PARALLEL_INTERPRETERS
 )
 target_link_libraries(OpenSeesMP
                       ${MPI_Fortran_LIBRARIES}
