@@ -480,8 +480,6 @@ target_link_libraries(OpenSeesLIB
     OPS_OS_Specific_libs
     OPS_Tagged 
     OPS_Utilities
-    ${MPI_Fortran_LIBRARIES}
-    ${MPI_C_LIBRARIES}
 )
 
 
@@ -564,8 +562,6 @@ target_include_directories(OpenSeesMP PUBLIC
   ${MPI_C_INCLUDE_DIRS}
   ${METIS_INCLUDES}
   ${HDF5_INCLUDE_DIR}
-  ${HDF5_INCLUDE_DIR}/H5public.h
-  ${HDF5_INCLUDE_DIR}/hdf5.h
 )
 
 target_compile_definitions(OpenSeesMP 
