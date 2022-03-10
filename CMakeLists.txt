@@ -298,6 +298,11 @@ else()
   message(STATUS "PYTHON NOT FOUND")
 endif()
 
+if(DEFINED ENV{SCOTCH_DIR})
+	link_directories($ENV{SCOTCH_DIR}/lib)
+	set(SCOTCH_LIBRARIES esmumps ptscotch scotch scotcherr)
+endif()
+
 message("OPS >>> BLAS:    ${BLAS_LIBRARIES}")
 message("OPS >>> CBLAS:   ${CBLAS_LIBRARY}\n")
 message("OPS >>> LAPACK:  ${LAPACK_LIBRARIES}")
@@ -309,6 +314,11 @@ message("OPS >>> CSPARSE: ${CSPARSE_LIBRARIES}")
 message("OPS >>> TCL:     ${TCL_LIBRARY}")
 message("OPS >>> AMD:     ${AMD_LIBRARIES}")
 message("OPS >>> TETGEN:     ${TETGEN_LIBRARIES}")
+message("OPS >>> MUMPS:   ${MUMPS_LIBRARIES}")
+message("OPS >>> METIS:   ${METIS_LIBRARIES}")
+message("OPS >>> SCOTCH:  ${SCOTCH_LIBRARIES}")
+message("OPS >>> SCALAPACK:  ${SCALAPACK_LIBRARIES}")
+message("OPS >>> BLACS:   ${BLACS_LIBRARIES}")
 
 add_library(OPS_Numerics INTERFACE)
 
@@ -412,7 +422,7 @@ target_link_libraries(G3
 #
 
 add_library(OpenSeesLIB  EXCLUDE_FROM_ALL)
-target_include_directories(OpenSeesLIB PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
+#target_include_directories(OpenSeesLIB PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
 target_link_libraries(OpenSeesLIB
     ${OPS_Extension_List}
     OPS_Actor 
@@ -517,11 +527,18 @@ target_link_libraries(OpenSeesSP OpenSeesLIB)
 #
 
 add_executable(OpenSeesMP EXCLUDE_FROM_ALL 
-  ${OPS_SRC_DIR}/tcl/tclAppInit.cpp
+  ${OPS_SRC_DIR}/tcl/mpiParameterMain.cpp
   ${OPS_SRC_DIR}/tcl/tclMain.cpp
 )
 
-target_compile_definitions(OpenSeesMP 
+target_include_directories(OpenSeesMP PUBLIC
+  ${TCL_INCLUDE_PATH}
+  ${MPI_C_INCLUDE_DIRS}
+  ${METIS_INCLUDES}
+  ${HDF5_INCLUDE_DIR}
+)
+
+target_compile_definitions(OpenSeesMP
     PUBLIC _PARALLEL_INTERPRETERS
 )
 target_include_directories(OpenSeesMP PUBLIC ${MPI_C_INCLUDE_DIRS} ${MUMPS_INCLUDE_DIR})
@@ -545,6 +562,9 @@ else ()
 endif()
 
 target_link_libraries(OpenSeesMP
+                      ${MPI_Fortran_LIBRARIES}
+                      ${MPI_C_LIBRARIES}
+                      ${HDF5_LIBRARIES}
                       OPS_InterpTcl
                       OPS_Numerics
                       ${CMAKE_DL_LIBS}
@@ -557,13 +577,10 @@ target_link_libraries(OpenSeesMP
                       ${TRIANGLE_LIBRARIES}
                       ${MYSQL_LIBRARIES}
                       ${CONAN_LIBS}
-                      ${HDF5_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${BLAS_LIBRARIES}
                       ${METIS_LIBRARIES}
                       ${MUMPS_LIBRARIES}
-                      ${MPI_Fortran_LIBRARIES}
-                      ${MPI_C_LIBRARIES}
                       OpenSeesLIB
 )
 
@@ -693,12 +710,11 @@ endif()
 
 # Reliability
 #----------------------------
-# message(STATUS "Ext list ${OPS_Extension_List}")
-# if ("OPS_Reliability" IN_LIST OPS_Extension_List)
-#     add_compile_definitions(_RELIABILITY)
-#     target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
-# endif()
-target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
+if ("OPS_Reliability" IN_LIST OPS_Extension_List)
+    add_compile_definitions(_RELIABILITY)
+    target_link_libraries(${OPS_FINAL_TARGET} OPS_Reliability)
+endif()
+
 
 #----------------------------
 # HDF5
