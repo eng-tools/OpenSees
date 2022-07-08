@@ -1084,7 +1084,8 @@ void ManzariDafalias::MaxStrainInc(const Vector& CurStress, const Vector& CurStr
         if(fabs(StrainInc(ii)) > fabs(maxInc))
             maxInc = StrainInc(ii);
     if (fabs(maxInc) > maxStrainInc){
-        int numSteps = (int)floor(fabs(maxInc) / maxStrainInc) + 1;
+        int numSteps = (int)fmin(floor(fabs(maxInc) / maxStrainInc) + 1, 10);
+        opserr << "******* Strain Inc > tol --> use sub-stepping: " << numSteps << endln;
         StrainInc = (NextStrain - CurStrain) / numSteps;
 
         Vector cStress(6), cStrain(6), cAlpha(6), cFabric(6), cAlpha_in(6), cEStrain(6);
@@ -1104,25 +1105,28 @@ void ManzariDafalias::MaxStrainInc(const Vector& CurStress, const Vector& CurStr
             (this->*exp_int)(cStress, cStrain, cEStrain, cAlpha, cFabric, cAlpha_in, nStrain,
             nEStrain, nStress, nAlpha, nFabric, nDGamma, nVoidRatio, nG, nK, nCe, nCep, nCepC);
 
-            cStress = nStress; cStrain = nStrain; cAlpha = nAlpha; cFabric = nFabric;
+            cStress = nStress; cStrain = nStrain; cAlpha = nAlpha; cFabric = nFabric; cEStrain = nEStrain;
         }
 
         NextElasticStrain    = nEStrain;
         NextStress            = nStress;
         NextAlpha            = nAlpha;
         NextFabric            = nFabric;
+        aC = nCe;
+        aCep = nCep;
+        aCep_Consistent = nCepC;
 
-        Vector n(6), d(6), b(6), R(6), dPStrain(6);
-        double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, B, C, D;
-        GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta,
-                alphaDtheta, b0,A, D, B, C, R);
-
-        dPStrain     = CurElasticStrain + (NextStrain - CurStrain) - NextElasticStrain;
-        NextDGamma   = dPStrain.Norm() / R.Norm();
-
-        aC    = nCe;
-        aCep  = GetElastoPlasticTangent(NextStress, NextDGamma, CurStrain, NextStrain, G, K, B, C, D, h, n, d, b);
-        aCep_Consistent = aCep;
+//        Vector n(6), d(6), b(6), R(6), dPStrain(6);
+//        double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, B, C, D;
+//        GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta,
+//                alphaDtheta, b0,A, D, B, C, R);
+//
+//        dPStrain     = CurElasticStrain + (NextStrain - CurStrain) - NextElasticStrain;
+//        NextDGamma   = dPStrain.Norm() / R.Norm();
+//
+//        aC    = nCe;
+//        aCep  = GetElastoPlasticTangent(NextStress, NextDGamma, CurStrain, NextStrain, G, K, B, C, D, h, n, d, b);
+//        aCep_Consistent = aCep;
 
     } else {
         (this->*exp_int)(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain,
@@ -1159,7 +1163,7 @@ void ManzariDafalias::MaxEnergyInc(const Vector& CurStress, const Vector& CurStr
             exp_int = &ManzariDafalias::ModifiedEuler;
             break;
     }
-
+    // previously set to 1e-4, however, error is now normalised by P_atm, which typically is 100.
     double TolE = 1.0e-2;
 
     (this->*exp_int)(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain,
@@ -1172,22 +1176,24 @@ void ManzariDafalias::MaxEnergyInc(const Vector& CurStress, const Vector& CurStr
     if (errE > TolE)     // || (DoubleDot2_2_Mixed(NextStress - CurStress, NextStress - CurStress) > TolE))
     {
         if (debugFlag) opserr << "******* Energy Inc > tol --> use sub-stepping" << endln;
-        Vector StrainInc(6); StrainInc = NextStrain - CurStrain;
-        StrainInc = (NextStrain - CurStrain) / 2;
+        int numSteps = (int)fmin(floor(errE / TolE) + 1, 10);
+        opserr << "******* Energy Inc > tol --> use sub-stepping: " << numSteps << endln;
+        Vector StrainInc(6);
+        StrainInc = (NextStrain - CurStrain) / numSteps;
 
         Vector cStress(6), cStrain(6), cAlpha(6), cFabric(6), cAlpha_in(6), cEStrain(6);
         Vector nStrain(6) ,nEStrain(6), nStress(6), nAlpha(6), nFabric(6), nAlpha_in(6);
         Matrix nCe(6,6), nCep(6,6), nCepC(6,6);
         double nDGamma, nVoidRatio, nG, nK;
         Vector n(6), d(6), b(6), R(6), dPStrain(6);
-        //double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, B, C, D;
+        double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, B, C, D;
 
         // create temporary variables
         cStress = CurStress; cStrain = CurStrain; cAlpha = CurAlpha; cFabric = CurFabric;
         cAlpha_in = alpha_in; cEStrain = CurElasticStrain;
 
 
-        for(int ii=1; ii <= 2; ii++)
+        for(int ii=1; ii <= numSteps; ii++)
         {
             nStrain = cStrain + StrainInc;
 
@@ -1211,9 +1217,19 @@ void ManzariDafalias::MaxEnergyInc(const Vector& CurStress, const Vector& CurStr
         //aC = GetStiffness(K, G);
         //aCep = GetElastoPlasticTangent(NextStress, NextDGamma, CurStrain, NextStrain, G, K, B, C, D, h, n, d, b);
         //aCep_Consistent = aCep;
-        aC = nCe;
-        aCep = nCep;
-        aCep_Consistent = nCepC;
+
+        GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta,
+                alphaDtheta, b0,A, D, B, C, R);
+
+        dPStrain     = CurElasticStrain + (NextStrain - CurStrain) - NextElasticStrain;
+        NextDGamma   = dPStrain.Norm() / R.Norm();
+
+        aC    = nCe;
+        aCep  = GetElastoPlasticTangent(NextStress, NextDGamma, CurStrain, NextStrain, G, K, B, C, D, h, n, d, b);
+        aCep_Consistent = aCep;
+//        aC = nCe;
+//        aCep = nCep;
+//        aCep_Consistent = nCepC;
     }
 }
 
