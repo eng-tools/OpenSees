@@ -40,3 +40,5 @@ print(f'time: ', ops.getTime())
 approx_vtime = 0.0001 * 5  # variable transient is not active so time should be dt * 5
 # If variable transient is not active then time would be 0.0005
 assert 0.99 < time / approx_vtime < 1.01,  (time,  approx_vtime)
+
+from matplotlib.pyplot import matplotlib

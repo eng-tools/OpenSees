@@ -291,7 +291,7 @@ Pult=(0.5*Kp*GammaSoil*Dfoot*Dfoot+2*cSoil*Dfoot*sqrt(Kp))*Lfoot;  //passive cap
 
 //-------- CALCULATION OF Tult (LATERAL SLIDING CAPACITY)
 delta=0.667*phirad;                //assuming that for concrete footing, the friction angle delta=2/3 of phi
-Tult=(cSoil+Wg*tan(delta))*Lfoot*Bfoot; //sliding capacity of the footing 
+Tult=(cSoil*Lfoot*Bfoot+Wg*tan(delta)); //sliding capacity of the footing
 //-------- END OF Tult CALCULATION
 
 
