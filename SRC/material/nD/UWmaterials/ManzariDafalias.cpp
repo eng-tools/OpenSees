@@ -1063,11 +1063,11 @@ void ManzariDafalias::MaxStrainInc(const Vector& CurStress, const Vector& CurStr
             exp_int = &ManzariDafalias::ForwardEuler;
             break;
 
-        case INT_MAXENE_RK    : // Runge-Kutta 4-th order scheme
+        case INT_MAXSTR_RK    : // Runge-Kutta 4-th order scheme
             exp_int = &ManzariDafalias::RungeKutta4;
             break;
 
-        case INT_MAXENE_MFE    : // Modified Euler constraining maximum energy increment
+        case INT_MAXSTR_MFE    : // Modified Euler constraining maximum strain increment
             exp_int = &ManzariDafalias::ModifiedEuler;
             break;
 
@@ -1096,22 +1096,28 @@ void ManzariDafalias::MaxStrainInc(const Vector& CurStress, const Vector& CurStr
         // create temporary variables
         cStress = CurStress; cStrain = CurStrain; cAlpha = CurAlpha; cFabric = CurFabric;
         cAlpha_in = alpha_in; cEStrain = CurElasticStrain;
+        nG = G;
+        nK = K;
 
 
         for(int ii = 1; ii <= numSteps; ii++)
         {
             nStrain = cStrain + StrainInc;
+            nVoidRatio = m_e_init - (1 + m_e_init) * GetTrace(nStrain);
+            GetElasticModuli(cStress, nVoidRatio, nK, nG);
 
             (this->*exp_int)(cStress, cStrain, cEStrain, cAlpha, cFabric, cAlpha_in, nStrain,
             nEStrain, nStress, nAlpha, nFabric, nDGamma, nVoidRatio, nG, nK, nCe, nCep, nCepC);
 
-            cStress = nStress; cStrain = nStrain; cAlpha = nAlpha; cFabric = nFabric; cEStrain = nEStrain;
+            cStress = nStress; cStrain = nStrain; cEStrain = nEStrain; cAlpha = nAlpha; cFabric = nFabric;
+
         }
 
         NextElasticStrain    = nEStrain;
         NextStress            = nStress;
         NextAlpha            = nAlpha;
         NextFabric            = nFabric;
+        NextVoidRatio = nVoidRatio;
         aC = nCe;
         aCep = nCep;
         aCep_Consistent = nCepC;
@@ -1191,22 +1197,26 @@ void ManzariDafalias::MaxEnergyInc(const Vector& CurStress, const Vector& CurStr
         // create temporary variables
         cStress = CurStress; cStrain = CurStrain; cAlpha = CurAlpha; cFabric = CurFabric;
         cAlpha_in = alpha_in; cEStrain = CurElasticStrain;
-
+        nG = G;
+        nK = K;
 
         for(int ii=1; ii <= numSteps; ii++)
         {
             nStrain = cStrain + StrainInc;
+            nVoidRatio = m_e_init - (1 + m_e_init) * GetTrace(nStrain);
+            GetElasticModuli(cStress, nVoidRatio, nK, nG);
 
             (this->*exp_int)(cStress, cStrain, cEStrain, cAlpha, cFabric, cAlpha_in, nStrain,
             nEStrain, nStress, nAlpha, nFabric, nDGamma, nVoidRatio, nG, nK, nCe, nCep, nCepC);
 
-            cStress = nStress; cStrain = nStrain; cAlpha = nAlpha; cFabric = nFabric;
+            cStress = nStress; cStrain = nStrain; cEStrain = nEStrain; cAlpha = nAlpha; cFabric = nFabric;
         }
 
         NextElasticStrain    = nEStrain;
         NextStress            = nStress;
         NextAlpha            = nAlpha;
         NextFabric            = nFabric;
+        NextVoidRatio = nVoidRatio;
 
         //GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta,
         //        alphaDtheta, b0, A, D, B, C, R);
