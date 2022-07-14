@@ -4541,7 +4541,7 @@ ManzariDafalias::GetElasticModuli(const Vector& sigma, const double& en, const d
     }
     */
     if (mElastFlag == 0)
-        G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en);
+        G = m_G0 * m_P_atm * pow((2.97 - m_e_init),2) / (1 + m_e_init);
     else
         G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en) * sqrt(pn / m_P_atm);
     K = two3 * (1 + m_nu) / (1 - 2 * m_nu) * G;
@@ -4556,7 +4556,7 @@ ManzariDafalias::GetElasticModuli(const Vector& sigma, const double& en, double 
     pn = (pn <= m_Pmin) ? m_Pmin : pn;
 
     if (mElastFlag == 0)
-        G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en);
+        G = m_G0 * m_P_atm * pow((2.97 - m_e_init),2) / (1 + m_e_init);
     else
         G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en) * sqrt(pn / m_P_atm);
     K = two3 * (1 + m_nu) / (1 - 2 * m_nu) * G;
@@ -4571,7 +4571,7 @@ ManzariDafalias::GetElasticModuli(const Vector& sigma, const double& en, double 
     pn = (pn <= m_Pmin) ? m_Pmin : pn;
 
     if (mElastFlag == 0)
-        G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en);
+        G = m_G0 * m_P_atm * pow((2.97 - m_e_init),2) / (1 + m_e_init);
     else
         G = m_G0 * m_P_atm * pow((2.97 - en),2) / (1 + en) * sqrt(pn / m_P_atm);
     K = two3 * (1 + m_nu) / (1 - 2 * m_nu) * G;
