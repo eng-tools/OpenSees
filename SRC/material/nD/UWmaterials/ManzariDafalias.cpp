@@ -1571,6 +1571,7 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
         Vector& NextElasticStrain, Vector& NextStress, Vector& NextAlpha, Vector& NextFabric,
         double& NextDGamma, double& NextVoidRatio,  double& G, double& K, Matrix& aC, Matrix& aCep, Matrix& aCep_Consistent)
 {
+    // This is not producing accurate results.
     double CurVoidRatio, dVolStrain;
     Vector n(6), d(6), b(6), R(6), dDevStrain(6), r(6);
     double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0,A, B, C, D, p, Kp;
@@ -1613,8 +1614,6 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
         // Calc Delta 1
         GetStateDependent(NextStress, NextAlpha, NextFabric , NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta, alphaDtheta,
             b0, A, D, B, C, R);
-        dVolStrain = GetTrace(NextStrain - CurStrain);
-        dDevStrain = GetDevPart(NextStrain - CurStrain);
         p = one3 * GetTrace(NextStress) + m_Presidual;
         p = p < small ? small : p;
         r = GetDevPart(NextStress) / p;
@@ -1622,15 +1621,31 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
 
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
-        if (fabs(temp4) < small) temp4 = small;
+        if (fabs(temp4) < small)
+        {
+            // Neutral loading
+            dSigma1.Zero();
+            dAlpha1.Zero();
+            dFabric1.Zero();
+            dPStrain1 = dDevStrain + dVolStrain*mI1;
 
-        NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,dDevStrain) - K*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
-        dSigma1   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1 - Macauley(NextDGamma)*
-             (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
-        dAlpha1   = Macauley(NextDGamma) * two3 * h * b;
-        dFabric1  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric);
-        dPStrain1 = NextDGamma * ToCovariant(R);
-
+        } else {
+            NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,dDevStrain) - K*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
+            if (NextDGamma < -small) {
+                NextDGamma = 0.0;
+                dSigma1   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1;
+                // dAlpha1   = 3.0*(GetDevPart(NextStress + dSigma1) / GetTrace(NextStress + dSigma1) - GetDevPart(NextStress) / GetTrace(NextStress)) ;
+                dAlpha1.Zero();
+                dFabric1.Zero();
+                dPStrain1.Zero();
+            } else {
+                dSigma1   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1 - Macauley(NextDGamma)*
+                 (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
+                dAlpha1   = Macauley(NextDGamma) * two3 * h * b;
+                dFabric1  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric);
+                dPStrain1 = NextDGamma * ToCovariant(R);
+            }
+        }
         // Calc Delta 2
         GetElasticModuli(NextStress + 0.5 * dSigma1, NextVoidRatio, K, G);
         aC = GetStiffness(K, G);
@@ -1643,15 +1658,30 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
 
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
-        if (fabs(temp4) < small) temp4 = small;
+        if (fabs(temp4) < small) {
+            // Neutral loading
+            dSigma2.Zero();
+            dAlpha2.Zero();
+            dFabric2.Zero();
+            dPStrain2 = dDevStrain + dVolStrain*mI1;
+        } else {
 
-        NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,0.5*dDevStrain) - K*0.5*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
-        dSigma2   = 2.0*G*0.5* ToContraviant(dDevStrain) + K*0.5*dVolStrain*mI1 - Macauley(NextDGamma)*
-              (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
-        dAlpha2   = Macauley(NextDGamma) * two3 * h * b;
-        dFabric2  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + 0.5 * dFabric1);
-        dPStrain2 = NextDGamma * ToCovariant(R);
-
+            NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,0.5*dDevStrain) - K*0.5*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
+            if (NextDGamma < -small) {
+                NextDGamma = 0.0;
+                dSigma2   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1;
+//                dAlpha2   = 3.0*(GetDevPart(NextStress + dSigma2) / GetTrace(NextStress + dSigma2) - GetDevPart(NextStress) / GetTrace(NextStress)) ;
+                dAlpha2.Zero();
+                dFabric2.Zero();
+                dPStrain2.Zero();
+            } else {
+                dSigma2   = 2.0*G*0.5* ToContraviant(dDevStrain) + K*0.5*dVolStrain*mI1 - Macauley(NextDGamma)*
+                      (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
+                dAlpha2   = Macauley(NextDGamma) * two3 * h * b;
+                dFabric2  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + 0.5 * dFabric1);
+                dPStrain2 = NextDGamma * ToCovariant(R);
+            }
+        }
         // Calc Delta 3
         GetElasticModuli(NextStress + 0.5 * dSigma2, NextVoidRatio, K, G);
         aC = GetStiffness(K, G);
@@ -1664,15 +1694,31 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
 
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
-        if (fabs(temp4) < small) temp4 = small;
+        if (fabs(temp4) < small) {
+            // Neutral loading
+            dSigma3.Zero();
+            dAlpha3.Zero();
+            dFabric3.Zero();
+            dPStrain3 = dDevStrain + dVolStrain*mI1;
 
-        NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,0.5*dDevStrain) - K*0.5*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
-        dSigma3   = 2.0*G*0.5* ToContraviant(dDevStrain) + K*0.5*dVolStrain*mI1 - Macauley(NextDGamma)*
-             (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
-        dAlpha3   = Macauley(NextDGamma) * two3 * h * b;
-        dFabric3  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + 0.5 * dFabric2);
-        dPStrain3 = NextDGamma * ToCovariant(R);
+        } else {
 
+            NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,0.5*dDevStrain) - K*0.5*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
+            if (NextDGamma < -small) {
+                NextDGamma = 0.0;
+                dSigma3   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1;
+//                dAlpha3   = 3.0*(GetDevPart(NextStress + dSigma3) / GetTrace(NextStress + dSigma3) - GetDevPart(NextStress) / GetTrace(NextStress)) ;
+                dAlpha3.Zero();
+                dFabric3.Zero();
+                dPStrain3.Zero();
+            } else {
+                dSigma3   = 2.0*G*0.5* ToContraviant(dDevStrain) + K*0.5*dVolStrain*mI1 - Macauley(NextDGamma)*
+                 (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
+                dAlpha3   = Macauley(NextDGamma) * two3 * h * b;
+                dFabric3  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + 0.5 * dFabric2);
+                dPStrain3 = NextDGamma * ToCovariant(R);
+            }
+        }
         // Calc Delta 4
         GetElasticModuli(NextStress + dSigma3, NextVoidRatio, K, G);
         aC = GetStiffness(K, G);
@@ -1685,14 +1731,31 @@ void ManzariDafalias::RungeKutta4(const Vector& CurStress, const Vector& CurStra
 
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
-        if (fabs(temp4) < small) temp4 = small;
+        if (fabs(temp4) < small) {
+            // Neutral loading
+            dSigma4.Zero();
+            dAlpha4.Zero();
+            dFabric4.Zero();
+            dPStrain4 = dDevStrain + dVolStrain*mI1;
 
-        NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,dDevStrain) - K*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
-        dSigma4   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1 - Macauley(NextDGamma)*
-             (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
-        dAlpha4   = Macauley(NextDGamma) * two3 * h * b;
-        dFabric4  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + dFabric3);
-        dPStrain4 = NextDGamma * ToCovariant(R);
+        } else {
+
+
+            NextDGamma      = (2.0*G*DoubleDot2_2_Mixed(n,dDevStrain) - K*dVolStrain*DoubleDot2_2_Contr(n,r))/temp4;
+            if (NextDGamma < -small) {
+                NextDGamma = 0.0;
+                dSigma4   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1;
+                dAlpha4.Zero();
+                dFabric4.Zero();
+                dPStrain4.Zero();
+            } else {
+                dSigma4   = 2.0*G* ToContraviant(dDevStrain) + K*dVolStrain*mI1 - Macauley(NextDGamma)*
+                     (2.0*G*(B*n-C*(SingleDot(n,n)-1.0/3.0*mI1)) + K*D*mI1);
+                dAlpha4   = Macauley(NextDGamma) * two3 * h * b;
+                dFabric4  = -1.0 * Macauley(NextDGamma) * m_cz * Macauley(-1.0*D) * (m_z_max * n + NextFabric + dFabric3);
+                dPStrain4 = NextDGamma * ToCovariant(R);
+            }
+        }
 
         // RK
         dSigma = (dSigma1 + dSigma4 + 2.0 * (dSigma2 + dSigma3)) / 6.0;
@@ -2441,81 +2504,80 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
     // see if p < 0
     p = one3 * GetTrace(NextStress) + m_Presidual;
     if (p < m_Pmin + m_Presidual)
-    {
+      {
         p = m_Pmin + m_Presidual;
-        if (false)
-        {
+        if (false) {
+//        fr = GetF(NextStress, NextAlpha);
+//        if (fr < mTolF)
+//        {
+//            NextDLambda = (m_Pmin - p) / K;
+//            NextElasticStrain += one3 * NextDLambda * mI1;
+//            NextStress += K * NextDLambda * mI1;
+//            NextDGamma = 0.0;
+//            aCep_Consistent = aCep = aC = GetStiffness(K, G);
+//
+//        } else {
+//
+//            // Do Newton iterations to find NextDGamma
+//            GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta, alphaDtheta,
+//                    b0, A, D, B, C, R);
+//            R = GetDevPart(R);
+//            NextDGamma  = 0.0;
+//            NextDLambda = 0.0;
+//
+//            Vector N(6); N = GetDevPart(NextStress) - p*NextAlpha;
+//            double fr1  = GetNorm_Contr(N)-root23*m_m*p;
+//            double fr2  = m_Pmin - p;
+//            double J11, J12, J21, J22;
+//
+//            for (int i = 1; i <= maxIter; i++)
+//            {
+//                J11 = DoubleDot2_2_Contr(N/GetNorm_Contr(N),-2.0*G*R+K*D*NextAlpha)+root23*m_m*K*D;
+//                J12 = DoubleDot2_2_Contr(N/GetNorm_Contr(N),-K*NextAlpha)-root23*m_m*K;
+//                J21 = K*D;
+//                J22 = -K;
+//
+//                double det = 1.0 / (J11*J22-J12*J21);
+//
+//                NextDGamma  -= det * (J22*fr1-J12*fr2);
+//                NextDLambda -= det * (J11*fr2-J21*fr1);
+//
+//                N = GetDevPart(NextStress) - p*NextAlpha - 2.0*G*NextDGamma*R + K*(D*NextDGamma-NextDLambda)*NextAlpha;
+//
+//                fr1  = GetNorm_Contr(N)-root23*m_m*(p-K*(D*NextDGamma-NextDLambda));
+//                fr2  = m_Pmin - p + K*(D*NextDGamma-NextDLambda);
+//
+//
+//                if (fabs(fr1) + fabs(fr2)  < mTolF)
+//                    break;
+//
+//                if(i == maxIter)
+//                {
+//                    if (debugFlag)
+//                        opserr << "Still outside with f =  " << fr << endln;
+//                    NextStress = m_Pmin * mI1;
+//                    NextAlpha.Zero();
+//                    return;
+//                }
+//
+//            }
+//
+//            p = one3 * GetTrace(NextStress) + m_Presidual;
+//
+//            Vector dPStrain(6);
+//            dPStrain = ToCovariant(NextDGamma * R + one3*(NextDGamma*D - NextDLambda) * mI1);
+//            NextElasticStrain -= dPStrain;
+//            NextStress -= aC * dPStrain;
+//        }
+
+    } else {
         fr = GetF(NextStress, NextAlpha);
         if (fr < mTolF)
         {
-            NextDLambda = (m_Pmin - p) / K;
-            NextElasticStrain += one3 * NextDLambda * mI1;
-            NextStress += K * NextDLambda * mI1;
-            NextDGamma = 0.0;
-            aCep_Consistent = aCep = aC = GetStiffness(K, G);
-
+          NextStress += p * mI1;
         } else {
-
-            // Do Newton iterations to find NextDGamma
-            GetStateDependent(NextStress, NextAlpha, NextFabric, NextVoidRatio, alpha_in, n, d, b, Cos3Theta, h, psi, alphaBtheta, alphaDtheta,
-                    b0, A, D, B, C, R);
-            R = GetDevPart(R);
-            NextDGamma  = 0.0;
-            NextDLambda = 0.0;
-
-            Vector N(6); N = GetDevPart(NextStress) - p*NextAlpha;
-            double fr1  = GetNorm_Contr(N)-root23*m_m*p;
-            double fr2  = m_Pmin - p;
-            double J11, J12, J21, J22;
-
-            for (int i = 1; i <= maxIter; i++)
-            {
-                J11 = DoubleDot2_2_Contr(N/GetNorm_Contr(N),-2.0*G*R+K*D*NextAlpha)+root23*m_m*K*D;
-                J12 = DoubleDot2_2_Contr(N/GetNorm_Contr(N),-K*NextAlpha)-root23*m_m*K;
-                J21 = K*D;
-                J22 = -K;
-
-                double det = 1.0 / (J11*J22-J12*J21);
-
-                NextDGamma  -= det * (J22*fr1-J12*fr2);
-                NextDLambda -= det * (J11*fr2-J21*fr1);
-
-                N = GetDevPart(NextStress) - p*NextAlpha - 2.0*G*NextDGamma*R + K*(D*NextDGamma-NextDLambda)*NextAlpha;
-
-                fr1  = GetNorm_Contr(N)-root23*m_m*(p-K*(D*NextDGamma-NextDLambda));
-                fr2  = m_Pmin - p + K*(D*NextDGamma-NextDLambda);
-
-
-                if (fabs(fr1) + fabs(fr2)  < mTolF)
-                    break;
-
-                if(i == maxIter)
-                {
-                    if (debugFlag)
-                        opserr << "Still outside with f =  " << fr << endln;
-                    NextStress = m_Pmin * mI1;
-                    NextAlpha.Zero();
-                    return;
-                }
-
-            }
-
-            p = one3 * GetTrace(NextStress) + m_Presidual;
-
-            Vector dPStrain(6);
-            dPStrain = ToCovariant(NextDGamma * R + one3*(NextDGamma*D - NextDLambda) * mI1);
-            NextElasticStrain -= dPStrain;
-            NextStress -= aC * dPStrain;
-        }
-
-    } else {
-    fr = GetF(NextStress, NextAlpha);
-        if (fr < mTolF)
-        {
-        NextStress += p * mI1;
-        } else {
-        NextStress = p * mI1;
-        NextAlpha.Zero();
+          NextStress = p * mI1;
+          NextAlpha.Zero();
         return;
         }
     }
