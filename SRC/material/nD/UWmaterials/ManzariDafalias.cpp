@@ -2571,19 +2571,18 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
 //        }
 
     } else {
-        fr = GetF(NextStress, NextAlpha);
-        if (fr < mTolF)
-        {
-          NextStress += p * mI1;
-        } else {
-          NextStress = p * mI1;
-          NextAlpha.Zero();
-        return;
-        }
+//        fr = GetF(NextStress, NextAlpha);
+//        if (fr < mTolF) {
+//          NextStress += p * mI1;
+//        } else {
+//          NextStress = p * mI1;
+//          NextAlpha.Zero();
+//        return
+//        }
     }
     NextStress = p * mI1;
     NextAlpha.Zero();
-    return
+    return;
     } else {
 
         // See if NextStress is outside yield surface
