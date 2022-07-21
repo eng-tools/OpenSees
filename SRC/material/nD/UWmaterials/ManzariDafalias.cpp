@@ -1531,8 +1531,8 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
 //                if (eta > m_Mc)
 //                    NextStress = one3 * GetTrace(NextStress) * mI1 + m_Mc / eta * GetDevPart(NextStress);
 //                NextAlpha  = CurAlpha + 3.0 * (GetDevPart(NextStress)/GetTrace(NextStress) - GetDevPart(CurStress)/GetTrace(CurStress));
-
-                T += dT;
+//
+//                T += dT;
             }
             dT = fmax(q * dT, dT_min);
         } else {
