@@ -912,8 +912,11 @@ void ManzariDafalias::elastic_integrator(const Vector& CurStress, const Vector& 
 
     //update State variables
     double p = one3 * GetTrace(NextStress)+ m_Presidual;
-    if (p > small)
-        NextAlpha = GetDevPart(NextStress) / p;
+    if (p > small) {
+      NextAlpha = GetDevPart(NextStress) / p;
+    } else {
+      NextAlpha.Zero();
+    }
     return;
 }
 
@@ -1292,7 +1295,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
 {
     double dVolStrain;
     Vector n(6), d(6), b(6), R(6), dDevStrain(6), r(6), dStrain(6), tmp0(6), tmp1(6), tmp2(6), tmp3(6);
-    double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0,A, B, C, D, p, Kp;
+    double Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0,A, B, C, D, p, Kp, fr;
 
     double T = 0.0, dT = 1.0, dT_min = 1e-6 , TolE = 1e-4;
 
@@ -1348,6 +1351,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
 
+
         if (fabs(temp4) < small)
         {
             // Neutral loading
@@ -1396,19 +1400,28 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
         // Calc Delta 2
         // p = one3 * GetTrace(NextStress + dSigma1) + m_Presidual;
 		tmp0 = NextStress; tmp0 += dSigma1;    // tmp0 is NextStress + dSigma1 until calculating dSigma2
+		tmp1.Zero();  tmp1 += NextAlpha; tmp1 += dAlpha1;  // tmp1 is NextAlpha + dAlpha1 until calculating dSigma2
 		p = one3 * GetTrace(tmp0) + m_Presidual;
 
         if (p < m_Presidual)
         {
-            if (dT == dT_min)
-                return;
+            if (dT == dT_min) {
+              fr = GetF(tmp0, tmp1);
+              if (fabs(fr) < mTolF) {
+                  tmp0 += (m_Pmin + m_Presidual - p) * mI1;
+              } else {
+                  tmp0 = (m_Pmin + m_Presidual) * mI1;
+                  tmp1.Zero();
+              }
+            } else {
             dT = fmax(0.1 * dT, dT_min);
             continue;
+            }
         }
 
         // GetStateDependent(NextStress + dSigma1, NextAlpha + dAlpha1, NextFabric + dFabric1, NextVoidRatio, alpha_in, n, d, b,
         //         Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, D, B, C, R);
-		tmp1.Zero();  tmp1 += NextAlpha; tmp1 += dAlpha1;  // tmp1 is NextAlpha + dAlpha1 until calculating dSigma2
+
 		tmp2.Zero();  tmp2 += NextFabric; tmp2 += dFabric1;  // tmp2 is NextFabric + dFabric1 until calculating dSigma2
 		GetStateDependent(tmp0, tmp1, tmp2, NextVoidRatio, alpha_in, n, d, b,
 			Cos3Theta, h, psi, alphaBtheta, alphaDtheta, b0, A, D, B, C, R);
@@ -1418,6 +1431,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
 
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
+        // Note that temp is in stress units, whereas small is a constant, so if input is Pa then diff behaviour
 
         if (fabs(temp4) < small)
         {
@@ -1492,7 +1506,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
             continue;
         }
 
-        double stressNorm = GetNorm_Contr(NextStress);
+        double stressNorm = GetNorm_Contr(NextStress) * 101 / m_P_atm;
         tmp0 = dSigma2; tmp0 -= dSigma1;
         if (stressNorm < 0.5)
             // curStepError = GetNorm_Contr(dSigma2 - dSigma1);
@@ -1500,7 +1514,6 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
         else
             // curStepError = GetNorm_Contr(dSigma2 - dSigma1) / (2 * stressNorm);
             curStepError = GetNorm_Contr(tmp0) / (2 * stressNorm);
-
         if (curStepError > TolE)
         {
             if (debugFlag)
@@ -1519,7 +1532,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
                 NextAlpha = nAlpha;
                 Stress_Correction(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain, NextElasticStrain, NextStress,
                 NextAlpha, NextFabric, NextDGamma, NextVoidRatio, G, K, aC, aCep, aCep_Consistent);
-
+                opserr << "--- DM04 at end =  " << curStepError << "stressNorm: " << stressNorm << endln;
                 T += dT;
 
                 // aCep_thisStep = 0.5 * (aCep1 + aCep2);
@@ -2505,7 +2518,7 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
     p = one3 * GetTrace(NextStress) + m_Presidual;
     if (p < m_Pmin + m_Presidual)
       {
-        p = m_Pmin + m_Presidual;
+        // p = m_Pmin + m_Presidual;
         if (false) {
 //        fr = GetF(NextStress, NextAlpha);
 //        if (fr < mTolF)
@@ -2572,10 +2585,10 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
 
     } else {
         fr = GetF(NextStress, NextAlpha);
-        if (fr < mTolF) {
-          NextStress += p * mI1;
+        if (fabs(fr) < mTolF) {
+          NextStress += (m_Pmin + m_Presidual - p) * mI1;
         } else {
-          NextStress = p * mI1;
+          NextStress = (m_Pmin + m_Presidual) * mI1;
           NextAlpha.Zero();
         return;
         }
@@ -2648,7 +2661,7 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
                 {
                     if (debugFlag)
                         opserr << "Still outside with f =  " << fr << endln;
-                    if (GetF(CurStress, NextAlpha) < mTolF)
+                    if (fabs(GetF(CurStress, NextAlpha)) < mTolF)
                     {
                         Vector dSigma = NextStress - CurStress;
                         double alpha_up = 1.0;
