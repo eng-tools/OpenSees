@@ -1351,7 +1351,6 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
         temp4 = (Kp + 2.0*G*(B-C*GetTrace(SingleDot(n,SingleDot(n,n))))
             - K*D*DoubleDot2_2_Contr(n,r));
 
-
         if (fabs(temp4) < small)
         {
             // Neutral loading
@@ -1532,7 +1531,7 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
                 NextAlpha = nAlpha;
                 Stress_Correction(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain, NextElasticStrain, NextStress,
                 NextAlpha, NextFabric, NextDGamma, NextVoidRatio, G, K, aC, aCep, aCep_Consistent);
-                opserr << "--- DM04 at end =  " << curStepError << "stressNorm: " << stressNorm << endln;
+//                opserr << "--- DM04 at end =  " << curStepError << "stressNorm: " << stressNorm << endln;
                 T += dT;
 
                 // aCep_thisStep = 0.5 * (aCep1 + aCep2);
