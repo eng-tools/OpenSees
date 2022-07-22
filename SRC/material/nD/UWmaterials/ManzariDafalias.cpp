@@ -39,12 +39,12 @@
 #define INT_MAXENE_MFE    0
 #define INT_ModifiedEuler 1
 #define INT_BackwardEuler 2
-#define INT_RungeKutta    3
+#define INT_RungeKutta    3  // This is not producing accurate results.
 #define INT_MAXENE_FE     4
 #define INT_ForwardEuler  5
-#define INT_MAXENE_RK     6
+#define INT_MAXENE_RK     6  // This is not producing accurate results.
 #define INT_MAXSTR_MFE    7
-#define INT_MAXSTR_RK     8
+#define INT_MAXSTR_RK     8  // This is not producing accurate results.
 #define INT_MAXSTR_FE     9
 #define INT_RungeKutta45  45 // By Jose Abell @ UANDES
 
@@ -1522,29 +1522,29 @@ void ManzariDafalias::ModifiedEuler(const Vector& CurStress, const Vector& CurSt
             q = fmax(0.8 * sqrt(TolE / curStepError), 0.1);
 
             if (dT == dT_min) {
-//                mUseElasticTan = true;
+                mUseElasticTan = true;
 
 				// NextElasticStrain -= 0.5* (dPStrain1 + dPStrain2);
 				tmp0 = dPStrain1; tmp0 += dPStrain2; tmp0 *= 0.5;
 				NextElasticStrain -= tmp0;
                 NextStress = nStress;
-                NextAlpha = nAlpha;
-                Stress_Correction(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain, NextElasticStrain, NextStress,
-                NextAlpha, NextFabric, NextDGamma, NextVoidRatio, G, K, aC, aCep, aCep_Consistent);
+//                NextAlpha = nAlpha;
+//                Stress_Correction(CurStress, CurStrain, CurElasticStrain, CurAlpha, CurFabric, alpha_in, NextStrain, NextElasticStrain, NextStress,
+//                NextAlpha, NextFabric, NextDGamma, NextVoidRatio, G, K, aC, aCep, aCep_Consistent);
 //                opserr << "--- DM04 at end =  " << curStepError << "stressNorm: " << stressNorm << endln;
-                T += dT;
+//                T += dT;
 
                 // aCep_thisStep = 0.5 * (aCep1 + aCep2);
-                aCep_thisStep = aCep1; aCep_thisStep += aCep2;
-                aCep_thisStep *= 0.5;
-                aCep_Consistent = aCep_thisStep * (aD * aCep_Consistent + T * mIImix);
+//                aCep_thisStep = aCep1; aCep_thisStep += aCep2;
+//                aCep_thisStep *= 0.5;
+//                aCep_Consistent = aCep_thisStep * (aD * aCep_Consistent + T * mIImix);
 
-//                double eta = sqrt(13.5) * GetNorm_Contr(GetDevPart(NextStress)) / GetTrace(NextStress);
-//                if (eta > m_Mc)
-//                    NextStress = one3 * GetTrace(NextStress) * mI1 + m_Mc / eta * GetDevPart(NextStress);
-//                NextAlpha  = CurAlpha + 3.0 * (GetDevPart(NextStress)/GetTrace(NextStress) - GetDevPart(CurStress)/GetTrace(CurStress));
-//
-//                T += dT;
+                double eta = sqrt(13.5) * GetNorm_Contr(GetDevPart(NextStress)) / GetTrace(NextStress);
+                if (eta > m_Mc)
+                    NextStress = one3 * GetTrace(NextStress) * mI1 + m_Mc / eta * GetDevPart(NextStress);
+                NextAlpha  = CurAlpha + 3.0 * (GetDevPart(NextStress)/GetTrace(NextStress) - GetDevPart(CurStress)/GetTrace(CurStress));
+
+                T += dT;
             }
             dT = fmax(q * dT, dT_min);
         } else {
