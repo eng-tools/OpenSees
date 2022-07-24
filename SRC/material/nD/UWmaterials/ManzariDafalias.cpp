@@ -2517,7 +2517,7 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
     p = one3 * GetTrace(NextStress) + m_Presidual;
     if (p < m_Pmin + m_Presidual)
       {
-        // p = m_Pmin + m_Presidual;
+        p = m_Pmin + m_Presidual;
         if (false) {
 //        fr = GetF(NextStress, NextAlpha);
 //        if (fr < mTolF)
@@ -2582,22 +2582,22 @@ ManzariDafalias::Stress_Correction(const Vector& CurStress, const Vector& CurStr
 //            NextStress -= aC * dPStrain;
 //        }
 
-    } else {
-        fr = GetF(NextStress, NextAlpha);
-        if (fabs(fr) < mTolF) {
-          NextStress += (m_Pmin + m_Presidual - p) * mI1;
-        } else {
-          NextStress = (m_Pmin + m_Presidual) * mI1;
-          NextAlpha.Zero();
-        return;
-        }
-    }
-//    NextStress = p * mI1;
-//    NextAlpha.Zero();
-//    return;
 //    } else {
+//        fr = GetF(NextStress, NextAlpha);
+//        if (fabs(fr) < mTolF) {
+//          NextStress += (m_Pmin + m_Presidual - p) * mI1;
+//        } else {
+//          NextStress = (m_Pmin + m_Presidual) * mI1;
+//          NextAlpha.Zero();
+//        return;
+//        }
     }
-    if (true) {
+    NextStress = p * mI1;
+    NextAlpha.Zero();
+    return;
+    } else {
+//    }
+//    if (true) {
 
         // See if NextStress is outside yield surface
         fr = GetF(NextStress, NextAlpha);
