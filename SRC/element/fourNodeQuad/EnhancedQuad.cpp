@@ -1609,6 +1609,47 @@ EnhancedQuad::getResponse(int responseID, Information &eleInfo)
 }
 
 int
+EnhancedQuad::setParameter(const char **argv, int argc, Parameter &param)
+{
+	if (argc < 1) {
+		return -1;
+	}
+
+	int res = -1;
+
+    // no element parameters, call setParameter in the material
+    int matRes = res;
+	int i;
+    for (i = 0; i < 4; i++) {
+        matRes = materialPointers[i]->setParameter(argv, argc, param);
+        if (matRes != -1) {
+            res = matRes;
+        }
+    }
+  return res;
+}
+
+int
+EnhancedQuad::updateParameter(int parameterID, Information &info)
+{
+    int res = -1;
+	int matRes = res;
+
+	if (parameterID == res) {
+        return -1;
+    } else {
+        int i;
+        for (i = 0; i < 4; i++) {
+            matRes = materialPointers[i]->updateParameter(parameterID, info);
+            if (matRes != -1) {
+                res = matRes;
+            }
+        }
+		return res;
+    }
+}
+
+int
 EnhancedQuad::sendSelf (int commitTag, Channel &theChannel)
 {
   int res = 0;
