@@ -90,3 +90,7 @@ Concrete.h
 forumat.for
 build
 bin
+
+# for build on macbook
+**/**/.DS_Store
+SRC/interpreter/custom_openseespy.egg-info/

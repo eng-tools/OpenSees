@@ -1,5 +1,4 @@
-from setuptools import setup, find_packages
-
+from setuptools import setup
 
 setup(name='custom_openseespy',
       version='0.0.1',
